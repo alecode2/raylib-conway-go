@@ -17,53 +17,66 @@ UI BASE TYPE
 */
 type UIBase struct {
 	ID              string
-	Visible         bool
-	Children        []Element
-	Parent          Element
 	State           UIState
+	Visible         bool
+	Bounds          rl.Rectangle
+	Parent          Element
+	Children        []Element
 	EventHandlers   map[string]func(UIEvent)
 	PropagateEvents bool
-	Bounds          rl.Rectangle
+	CustomProps     map[string]interface{}
 }
 
-func (b *UIBase) SetParent(parent Element) {
-	b.Parent = parent
-}
-
-func (b *UIBase) GetParent() Element {
-	return b.Parent
-}
-
-func (b *UIBase) AddChild(child Element) {
-	b.Children = append(b.Children, child)
-}
-
-func (b *UIBase) SetID(id string) {
-	b.ID = id
-}
-
-func (b *UIBase) GetID() string {
-	return b.ID
-}
-
-func (b *UIBase) GetState() UIState {
-	return b.State
-}
-
-func (b *UIBase) SetState(state UIState) {
-	b.State = state
-}
-
-func (b *UIBase) SetEventHandler(eventName string, handler func(UIEvent)) {
-	if b.EventHandlers == nil {
-		b.EventHandlers = make(map[string]func(UIEvent))
+func NewUIBase() UIBase {
+	return UIBase{
+		State:         UIStateDefault,
+		Visible:       true,
+		Children:      []Element{},
+		EventHandlers: make(map[string]func(UIEvent)),
+		CustomProps:   make(map[string]interface{}),
 	}
-
-	b.EventHandlers[eventName] = handler
 }
 
-func (b *UIBase) HandleEvent(event UIEvent) {
-	if handler, ok := b.EventHandlers[event.Name]; ok {
-		handler(event)
-	}
+/*
+ UI BASE HELPER FUNCTIONS
+*/
+func GetState(e Element) UIState {
+	return e.GetUIBase().State
+}
+
+func SetState(e Element, state UIState) {
+	e.GetUIBase().State = state
+}
+
+func SetVisible(e Element, visible bool) {
+	e.GetUIBase().Visible = visible
+}
+
+func IsVisible(e Element) bool {
+	return e.GetUIBase().Visible
+}
+
+func AddChild(parent, child Element) {
+	child.GetUIBase().Parent = parent
+	parent.GetUIBase().Children = append(parent.GetUIBase().Children, child)
+}
+
+func GetChildren(e Element) []Element {
+	return e.GetUIBase().Children
+}
+
+func SetID(e Element, id string) {
+	e.GetUIBase().ID = id
+}
+
+func GetID(e Element) string {
+	return e.GetUIBase().ID
+}
+
+func SetBounds(e Element, bounds rl.Rectangle) {
+	e.GetUIBase().Bounds = bounds
+}
+
+func GetBounds(e Element) rl.Rectangle {
+	return e.GetUIBase().Bounds
 }

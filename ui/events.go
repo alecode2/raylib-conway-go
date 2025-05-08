@@ -1,10 +1,8 @@
 package ui
 
-import (
-	rl "github.com/gen2brain/raylib-go/raylib"
-)
+import rl "github.com/gen2brain/raylib-go/raylib"
 
-// Types of Events supported by default
+// Event types
 const (
 	EventHover = "hover"
 	EventClick = "click"
@@ -20,25 +18,24 @@ type UIEvent struct {
 
 type UIEventElement struct {
 	Element Element
-	Depth   int // For sorting later
+	Depth   int // Used for reverse depth-based handling
 }
 
 var uiEventList []UIEventElement
 
 func RefreshUIEventList(root Element) {
-	uiEventList = uiEventList[:0] // Clear the existing list without reallocating
+	uiEventList = uiEventList[:0]
 
 	var dfs func(el Element, depth int)
 	dfs = func(el Element, depth int) {
-		if !el.IsVisible() {
+		base := el.GetUIBase()
+		if !base.Visible || base.State == UIStateDisabled {
 			return
 		}
 
-		if el.GetState() != UIStateDisabled {
-			uiEventList = append(uiEventList, UIEventElement{Element: el, Depth: depth})
-		}
+		uiEventList = append(uiEventList, UIEventElement{Element: el, Depth: depth})
 
-		for _, child := range el.GetChildren() {
+		for _, child := range base.Children {
 			dfs(child, depth+1)
 		}
 	}
@@ -47,52 +44,43 @@ func RefreshUIEventList(root Element) {
 }
 
 func HandleUIHover(mouse rl.Vector2) {
-	hoveredSomething := false
-
 	for i := len(uiEventList) - 1; i >= 0; i-- {
 		elem := uiEventList[i].Element
-		if elem.IsHovered(mouse) {
-			elem.SetState(UIStateHovered)
-			hoveredSomething = true
-		} else {
-			elem.SetState(UIStateDefault)
+		hoverable, ok := elem.(Hoverable)
+		if !ok {
+			continue
+		}
+
+		hovered := hoverable.IsHovered(mouse)
+		base := elem.GetUIBase()
+
+		if hovered {
+			if base.State != UIStateHovered {
+				base.State = UIStateHovered
+				dispatchEvent(elem, UIEvent{Name: EventHover, MousePosition: mouse})
+			}
+		} else if base.State == UIStateHovered {
+			base.State = UIStateDefault
+			dispatchEvent(elem, UIEvent{Name: EventBlur, MousePosition: mouse})
 		}
 	}
-
-	if !hoveredSomething {
-	}
-
 }
 
 func HandleUIPress(mouse rl.Vector2) bool {
 	for i := len(uiEventList) - 1; i >= 0; i-- {
 		elem := uiEventList[i].Element
-		if elem.IsHovered(mouse) {
+		if hoverable, ok := elem.(Hoverable); ok && hoverable.IsHovered(mouse) {
 			dispatchPressFrom(elem)
 			return true
 		}
 	}
-
 	return false
-}
-
-func dispatchPressFrom(elem Element) {
-	elem.HandleEvent(UIEvent{
-		Name:          "press",
-		MousePosition: rl.GetMousePosition(),
-	})
-
-	elem.SetState(UIStatePressed)
-
-	if elem.ShouldPropagate() && elem.GetParent() != nil {
-		dispatchPressFrom(elem.GetParent())
-	}
 }
 
 func HandleUIClick(mouse rl.Vector2) bool {
 	for i := len(uiEventList) - 1; i >= 0; i-- {
 		elem := uiEventList[i].Element
-		if elem.IsHovered(mouse) {
+		if hoverable, ok := elem.(Hoverable); ok && hoverable.IsHovered(mouse) {
 			dispatchClickFrom(elem)
 			return true
 		}
@@ -100,13 +88,33 @@ func HandleUIClick(mouse rl.Vector2) bool {
 	return false
 }
 
-func dispatchClickFrom(elem Element) {
-	elem.HandleEvent(UIEvent{
-		Name:          "click",
+func dispatchPressFrom(elem Element) {
+	dispatchEvent(elem, UIEvent{
+		Name:          EventPress,
 		MousePosition: rl.GetMousePosition(),
 	})
 
-	if elem.ShouldPropagate() && elem.GetParent() != nil {
-		dispatchClickFrom(elem.GetParent())
+	elem.GetUIBase().State = UIStatePressed
+
+	if elem.GetUIBase().PropagateEvents && elem.GetUIBase().Parent != nil {
+		dispatchPressFrom(elem.GetUIBase().Parent)
+	}
+}
+
+func dispatchClickFrom(elem Element) {
+	dispatchEvent(elem, UIEvent{
+		Name:          EventClick,
+		MousePosition: rl.GetMousePosition(),
+	})
+
+	if elem.GetUIBase().PropagateEvents && elem.GetUIBase().Parent != nil {
+		dispatchClickFrom(elem.GetUIBase().Parent)
+	}
+}
+
+func dispatchEvent(elem Element, event UIEvent) {
+	base := elem.GetUIBase()
+	if handler, ok := base.EventHandlers[event.Name]; ok {
+		handler(event)
 	}
 }

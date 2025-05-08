@@ -1,3 +1,4 @@
+/*
 package main
 
 import (
@@ -117,4 +118,65 @@ func main() {
 
 		rl.EndDrawing()
 	}
+}
+*/
+
+package main
+
+import (
+	"conway/ui"
+	"fmt"
+	rl "github.com/gen2brain/raylib-go/raylib"
+)
+
+func main() {
+	rl.InitWindow(800, 600, "UI Test")
+	rl.SetTargetFPS(10)
+
+	// Create root panel
+	root := ui.NewPanel(rl.Gray)
+	ui.SetBounds(root, rl.NewRectangle(0, 0, 800, 600))
+
+	// Panel 1
+	panel1 := ui.NewPanel(rl.Red)
+	ui.SetBounds(panel1, rl.NewRectangle(100, 100, 200, 100))
+	panel1.EventHandlers[ui.EventHover] = func(evt ui.UIEvent) {
+		fmt.Println("Hovered Panel 1")
+	}
+	panel1.EventHandlers[ui.EventClick] = func(evt ui.UIEvent) {
+		fmt.Println("Clicked Panel 1")
+	}
+	ui.AddChild(root, panel1)
+
+	// Panel 2
+	panel2 := ui.NewPanel(rl.Blue)
+	ui.SetBounds(panel2, rl.NewRectangle(350, 100, 200, 100))
+	panel2.EventHandlers[ui.EventHover] = func(evt ui.UIEvent) {
+		fmt.Println("Hovered Panel 2")
+	}
+	panel2.EventHandlers[ui.EventClick] = func(evt ui.UIEvent) {
+		fmt.Println("Clicked Panel 2")
+	}
+	ui.AddChild(root, panel2)
+
+	for !rl.WindowShouldClose() {
+		rl.BeginDrawing()
+		rl.ClearBackground(rl.RayWhite)
+
+		mouse := rl.GetMousePosition()
+		ui.RefreshUIEventList(root)
+		ui.HandleUIHover(mouse)
+
+		if rl.IsMouseButtonPressed(rl.MouseLeftButton) {
+			ui.HandleUIPress(mouse)
+		}
+		if rl.IsMouseButtonReleased(rl.MouseLeftButton) {
+			ui.HandleUIClick(mouse)
+		}
+
+		ui.Draw(root)
+		rl.EndDrawing()
+	}
+
+	rl.CloseWindow()
 }

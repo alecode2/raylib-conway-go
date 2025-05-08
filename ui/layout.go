@@ -10,69 +10,35 @@ const (
 func Size(element Element) {
 	SizeAlongAxis(element)
 	SizeAcrossAxis(element)
-}
-
-/*
-func CalcSizeAlongAxis(el Element, axis Axis) float32 {
-    if el is leaf:
-        return el's intrinsic or fixed size on axis
-    else:
-        size := 0
-        for child in el.GetChildren():
-            size += CalcSizeAlongAxis(child, axis) + spacing/margin
-        return size + el.padding/border
-}
-*/
-func SizeAlongAxis(element Element) {
-	if len(element.GetChildren()) == 0 {
-
-	} else {
-
+	for _, child := range element.GetUIBase().Children {
+		Size(child)
 	}
 }
 
-/*
-func CalcSizeAcrossAxis(el Element, axis Axis) float32 {
-    if el is leaf:
-        return el's intrinsic or fixed size across axis
-    else:
-        size := 0
-        for child in el.GetChildren():
-            size = max(size, CalcSizeAcrossAxis(child, axis))
-        return size + el.padding/border
+func SizeAlongAxis(element Element) {
+	// TODO: Respect min/max constraints, auto-sizing, etc.
+	// Use element.GetUIBase().Bounds.Width or Height depending on the axis
 }
-*/
+
 func SizeAcrossAxis(element Element) {
-
+	// Similar to above but for the cross-axis
 }
 
-/*
-func LayoutPosition(el Element, origin rl.Vector2, axis Axis) {
-    el.Bounds.X = origin.X
-    el.Bounds.Y = origin.Y
-
-    currentPos := origin
-    for child in el.GetChildren():
-        LayoutPosition(child, currentPos, axis)
-
-        if axis == Horizontal:
-            currentPos.X += child.Bounds.Width + spacing
-        else:
-            currentPos.Y += child.Bounds.Height + spacing
-}
-*/
 func Position(element Element) {
-
+	// Calculate position based on layout rules
+	for _, child := range element.GetUIBase().Children {
+		Position(child)
+	}
 }
 
 func Draw(element Element) {
-	if !element.IsVisible() {
-		return
+	// Draw this element if it's a Drawable
+	if d, ok := element.(Drawable); ok {
+		d.Draw()
 	}
 
-	element.Draw()
-
-	for _, child := range element.GetChildren() {
+	// Then draw its children
+	for _, child := range element.GetUIBase().Children {
 		Draw(child)
 	}
 }
