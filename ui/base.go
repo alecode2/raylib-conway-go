@@ -2,7 +2,7 @@ package ui
 
 import rl "github.com/gen2brain/raylib-go/raylib"
 
-// UI TYPES
+// UI STATES
 type UIState string
 
 const (
@@ -10,6 +10,22 @@ const (
 	UIStateHovered  UIState = "hovered"
 	UIStatePressed  UIState = "pressed"
 	UIStateDisabled UIState = "disabled"
+)
+
+//SIZING
+type SizingMode int
+
+const (
+	SizingFixed SizingMode = iota
+	SizingFit
+	SizingGrow
+)
+
+type Axis int
+
+const (
+	Horizontal Axis = iota
+	Vertical
 )
 
 /*
@@ -25,6 +41,21 @@ type UIBase struct {
 	EventHandlers   map[string]func(UIEvent)
 	PropagateEvents bool
 	CustomProps     map[string]interface{}
+
+	// Layout properties
+	Width        float32
+	Height       float32
+	MinWidth     float32
+	MinHeight    float32
+	WidthSizing  SizingMode
+	HeightSizing SizingMode
+
+	PaddingTop    float32
+	PaddingRight  float32
+	PaddingBottom float32
+	PaddingLeft   float32
+	Gap           float32
+	Direction     Axis
 }
 
 func NewUIBase() UIBase {
@@ -34,6 +65,9 @@ func NewUIBase() UIBase {
 		Children:      []Element{},
 		EventHandlers: make(map[string]func(UIEvent)),
 		CustomProps:   make(map[string]interface{}),
+		WidthSizing:   SizingFixed,
+		HeightSizing:  SizingFixed,
+		Direction:     Vertical,
 	}
 }
 
