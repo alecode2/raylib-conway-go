@@ -133,13 +133,19 @@ func main() {
 	rl.InitWindow(800, 600, "UI Test")
 	rl.SetTargetFPS(60)
 
-	// Create root panel
+	// Create root panel (full screen)
 	root := ui.NewPanel(rl.Gray)
 	ui.SetBounds(root, rl.NewRectangle(0, 0, 800, 600))
+	root.GetUIBase().Height = 600
+	root.GetUIBase().Width = 800
+	root.GetUIBase().Direction = ui.Horizontal
 
-	// Panel 1
+	// Panel 1 (Fixed Size)
 	panel1 := ui.NewPanel(rl.Red)
-	ui.SetBounds(panel1, rl.NewRectangle(100, 100, 200, 100))
+	panel1.GetUIBase().Height = 300
+	panel1.GetUIBase().Width = 400
+	panel1.GetUIBase().WidthSizing = ui.SizingFixed
+	panel1.GetUIBase().HeightSizing = ui.SizingFixed
 	panel1.EventHandlers[ui.EventClick] = func(evt ui.UIEvent) {
 		fmt.Println("Clicked Panel 1")
 	}
@@ -148,14 +154,25 @@ func main() {
 	}
 	ui.AddChild(root, panel1)
 
-	// Panel 2
+	// Panel 2 (Grow Horizontal, Fixed Vertical)
 	panel2 := ui.NewPanel(rl.Blue)
-	ui.SetBounds(panel2, rl.NewRectangle(350, 100, 200, 100))
+	panel2.GetUIBase().Height = 100
+	panel2.GetUIBase().MinWidth = 50
+	panel2.GetUIBase().WidthSizing = ui.SizingGrow
+	panel2.GetUIBase().HeightSizing = ui.SizingFixed
 	panel2.EventHandlers[ui.EventClick] = func(evt ui.UIEvent) {
 		fmt.Println("Clicked Panel 2")
 	}
+	panel2.EventHandlers[ui.EventPress] = func(evt ui.UIEvent) {
+		fmt.Println("Pressed Panel 2")
+	}
 	ui.AddChild(root, panel2)
 
+	// Run layout system (optional for this step)
+	ui.Size(root)
+	ui.Position(root)
+
+	// Main rendering loop
 	for !rl.WindowShouldClose() {
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.RayWhite)
@@ -171,6 +188,7 @@ func main() {
 			ui.HandleUIClick(mouse)
 		}
 
+		// Draw all panels
 		ui.Draw(root)
 		rl.EndDrawing()
 	}
