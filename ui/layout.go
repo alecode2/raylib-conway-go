@@ -1,225 +1,161 @@
 package ui
 
-func Size(element Element) {
+import (
+	"fmt"
+	"math"
+)
+
+func Size(root Element) {
+	// Bottom-up phase: Fit sizing
+	SizeAlongAxis(root)
+	SizeAcrossAxis(root)
+
+	// Top-down phase: Grow sizing
+	ApplyGrowSizes(root, Horizontal)
+	ApplyGrowSizes(root, Vertical)
+}
+
+func SizeAlongAxis(element Element) float32 {
+	base := element.GetUIBase()
+	axis := base.Direction
+	sizing := getSizing(base, axis)
+	fmt.Printf("Sizing for %s on axis %v: %v\n", base.ID, axis, sizing)
+
+	// Fixed-size shortcut
+	if sizing == SizingFixed {
+		fmt.Printf("Fixed size for %s on axis %v: %f\n", base.ID, axis, getFixedSize(base, axis))
+		size := getFixedSize(base, axis)
+		setSize(base, axis, size)
+		return size
+	}
+
+	// Leaf fallback
+	if len(base.Children) == 0 && sizing != SizingGrow {
+		fmt.Printf("No children, fixed size for %s on axis %v: %f\n", base.ID, axis, getFixedSize(base, axis))
+		size := getFixedSize(base, axis)
+		setSize(base, axis, size)
+		return size
+	}
+
+	// Sum child sizes
+	var total float32
+	for _, child := range base.Children {
+		childSize := SizeAlongAxis(child)
+		fmt.Printf("Child size for %s: %f\n", child.GetUIBase().ID, childSize) // Debug line
+		total += childSize
+	}
+	total += base.Gap * float32(max(0, len(base.Children)-1))
+	total += getPadding(base, axis)
+
+	// Clamp and assign
+	clampedTotal := max(total, getMinSize(base, axis))
+	setSize(base, axis, clampedTotal)
+	fmt.Printf("Clamped size for %s: %f\n", base.ID, clampedTotal)
+	return clampedTotal
+}
+
+func SizeAcrossAxis(element Element) float32 {
+	base := element.GetUIBase()
+	axis := getCrossAxis(base.Direction)
+	sizing := getSizing(base, axis)
+	fmt.Printf("Sizing for %s on axis %v: %v\n", base.ID, axis, sizing)
+
+	if sizing == SizingFixed {
+		fmt.Printf("Sizing for %s on axis %v: %v\n", base.ID, axis, sizing)
+		size := getFixedSize(base, axis)
+		setSize(base, axis, size)
+		return size
+	}
+
+	if len(base.Children) == 0 && sizing != SizingGrow {
+		fmt.Printf("No children, fixed size for %s on axis %v: %f\n", base.ID, axis, getFixedSize(base, axis))
+		size := getFixedSize(base, axis)
+		setSize(base, axis, size)
+		return size
+	}
+
+	// Max child size
+	var maxSize float32
+	for _, child := range base.Children {
+		size := SizeAcrossAxis(child)
+		fmt.Printf("Child size on cross axis for %s: %f\n", child.GetUIBase().ID, size)
+		if size > maxSize {
+			maxSize = size
+		}
+	}
+	maxSize += getPadding(base, axis)
+
+	// Clamp and assign
+	clampedMaxSize := max(maxSize, getMinSize(base, axis))
+	setSize(base, axis, clampedMaxSize)
+	fmt.Printf("Clamped size for %s on cross axis: %f\n", base.ID, clampedMaxSize)
+	return clampedMaxSize
+}
+
+func ApplyGrowSizes(element Element, axis Axis) {
 	base := element.GetUIBase()
 
-	if base.Direction == Horizontal {
-		base.Bounds.Width = SizeAlongAxis(element, Horizontal)
-		base.Bounds.Height = SizeAcrossAxis(element, Vertical)
-	} else {
-		base.Bounds.Width = SizeAcrossAxis(element, Horizontal)
-		base.Bounds.Height = SizeAlongAxis(element, Vertical)
-	}
+	// Collect growable children
+	var growable []Element
+	usedSpace := float32(0)
 
 	for _, child := range base.Children {
-		Size(child)
+		childBase := child.GetUIBase()
+		sizing := getSizing(childBase, axis)
+
+		if sizing == SizingGrow {
+			growable = append(growable, child)
+		} else {
+			usedSpace += getSize(childBase, axis)
+		}
+	}
+
+	// Add up gaps and padding
+	usedSpace += getPadding(base, axis)
+	usedSpace += base.Gap * float32(max(0, len(base.Children)-1))
+
+	remaining := getSize(base, axis) - usedSpace
+	if remaining > 0 && len(growable) > 0 {
+		GrowChildElements(base, growable, axis, remaining)
+	}
+
+	// Recurse top-down
+	for _, child := range base.Children {
+		ApplyGrowSizes(child, axis)
 	}
 }
 
-func SizeAlongAxis(element Element, direction Axis) float32 {
-	base := element.GetUIBase()
-	// Fixed-size shortcut (still clamp at the end)
-	if direction == Horizontal && base.WidthSizing == SizingFixed {
-		return clamp(base.PaddingLeft+base.Width+base.PaddingRight, base.MinWidth)
-	}
-	if direction == Vertical && base.HeightSizing == SizingFixed {
-		return clamp(base.PaddingTop+base.Height+base.PaddingBottom, base.MinHeight)
-	}
+func GrowChildElements(parent *UIBase, growable []Element, axis Axis, remaining float32) {
+	for remaining > 0 {
+		// Find smallest growable size
+		smallest := getSize(growable[0].GetUIBase(), axis)
+		secondSmallest := float32(math.Inf(1))
+		widthToAdd := remaining
 
-	// Leaf nodes (no children)
-	if len(base.Children) == 0 {
-		if direction == Horizontal {
-			return clamp(base.PaddingLeft+base.Width+base.PaddingRight, base.MinWidth)
-		}
-		return clamp(base.PaddingTop+base.Height+base.PaddingBottom, base.MinHeight)
-	}
+		for _, child := range growable {
+			size := getSize(child.GetUIBase(), axis)
 
-	// Step 1: Measure fixed and fit children
-	fixedTotal := float32(0)
-	growCount := 0
-	childSizes := make([]float32, len(base.Children))
-
-	for i, child := range base.Children {
-		childBase := child.GetUIBase()
-
-		// Pre-measure fit/fixed children
-		sizing := childBase.WidthSizing
-		if direction == Vertical {
-			sizing = childBase.HeightSizing
-		}
-
-		if sizing == SizingGrow {
-			growCount++
-			continue
-		}
-
-		size := SizeAlongAxis(child, direction)
-		childSizes[i] = size
-		fixedTotal += size
-	}
-
-	// Step 2: Calculate remaining space
-	totalGap := base.Gap * float32(max(0, len(base.Children)-1))
-	padding := base.PaddingLeft + base.PaddingRight
-	if direction == Vertical {
-		padding = base.PaddingTop + base.PaddingBottom
-	}
-
-	containerSize := fixedTotal + totalGap + padding // without grow yet
-
-	// Now determine container size based on sizing strategy
-	if direction == Horizontal && base.WidthSizing == SizingFixed {
-		containerSize = base.Width + padding
-	}
-	if direction == Vertical && base.HeightSizing == SizingFixed {
-		containerSize = base.Height + padding
-	}
-
-	// Clamp to min
-	minSize := base.MinWidth
-	if direction == Vertical {
-		minSize = base.MinHeight
-	}
-	if containerSize < minSize {
-		containerSize = minSize
-	}
-
-	// Step 3: Distribute remaining space to grow children
-	remaining := containerSize - fixedTotal - totalGap - padding
-	growSize := float32(0)
-	if growCount > 0 && remaining > 0 {
-		growSize = remaining / float32(growCount)
-	}
-
-	// Step 4: Assign grow sizes and recurse
-	for i, child := range base.Children {
-		childBase := child.GetUIBase()
-
-		sizing := childBase.WidthSizing
-		if direction == Vertical {
-			sizing = childBase.HeightSizing
-		}
-
-		if sizing == SizingGrow {
-			if direction == Horizontal {
-				childBase.Width = growSize
-			} else {
-				childBase.Height = growSize
+			if size < smallest {
+				secondSmallest = smallest
+				smallest = size
+			} else if size > smallest {
+				secondSmallest = min(secondSmallest, size)
+				widthToAdd = secondSmallest - smallest
 			}
-			// Recurse to propagate this down
-			childSizes[i] = SizeAlongAxis(child, direction)
-		}
-	}
-
-	// Step 5: Final total (include grow children now)
-	total := float32(0)
-	for _, sz := range childSizes {
-		total += sz
-	}
-	total += totalGap + padding
-
-	// Final clamp
-	if direction == Horizontal && total < base.MinWidth {
-		total = base.MinWidth
-	}
-	if direction == Vertical && total < base.MinHeight {
-		total = base.MinHeight
-	}
-	return total
-}
-
-func SizeAcrossAxis(element Element, direction Axis) float32 {
-	base := element.GetUIBase()
-
-	// Early return for fixed size (still clamp at the end)
-	if direction == Horizontal && base.WidthSizing == SizingFixed {
-		return clamp(base.PaddingLeft+base.Width+base.PaddingRight, base.MinWidth)
-	}
-	if direction == Vertical && base.HeightSizing == SizingFixed {
-		return clamp(base.PaddingTop+base.Height+base.PaddingBottom, base.MinHeight)
-	}
-
-	// Leaf node
-	if len(base.Children) == 0 {
-		if direction == Horizontal {
-			return clamp(base.PaddingLeft+base.Width+base.PaddingRight, base.MinWidth)
-		}
-		return clamp(base.PaddingTop+base.Height+base.PaddingBottom, base.MinHeight)
-	}
-
-	// Step 1: Measure fixed/fit children
-	fixedMax := float32(0)
-	growCount := 0
-	childSizes := make([]float32, len(base.Children))
-
-	for i, child := range base.Children {
-		childBase := child.GetUIBase()
-
-		sizing := childBase.HeightSizing
-		if direction == Horizontal {
-			sizing = childBase.WidthSizing
 		}
 
-		if sizing == SizingGrow {
-			growCount++
-			continue
-		}
+		// Determine step amount
+		widthToAdd = min(widthToAdd, remaining/float32(len(growable)))
 
-		size := SizeAcrossAxis(child, direction)
-		childSizes[i] = size
-
-		if size > fixedMax {
-			fixedMax = size
-		}
-	}
-
-	// Step 2: Determine container size so far
-	padding := base.PaddingTop + base.PaddingBottom
-	minSize := base.MinHeight
-	if direction == Horizontal {
-		padding = base.PaddingLeft + base.PaddingRight
-		minSize = base.MinWidth
-	}
-	containerSize := fixedMax + padding
-
-	if containerSize < minSize {
-		containerSize = minSize
-	}
-
-	// Step 3: Assign grow sizes
-	// For across axis, grow children should match container size (minus padding)
-	growSize := containerSize - padding
-	if growSize < 0 {
-		growSize = 0
-	}
-
-	for i, child := range base.Children {
-		childBase := child.GetUIBase()
-
-		sizing := childBase.HeightSizing
-		if direction == Horizontal {
-			sizing = childBase.WidthSizing
-		}
-
-		if sizing == SizingGrow {
-			if direction == Horizontal {
-				childBase.Width = growSize - childBase.PaddingLeft - childBase.PaddingRight
-			} else {
-				childBase.Height = growSize - childBase.PaddingTop - childBase.PaddingBottom
+		for _, child := range growable {
+			childBase := child.GetUIBase()
+			if getSize(childBase, axis) == smallest {
+				newSize := getSize(childBase, axis) + widthToAdd
+				setSize(childBase, axis, newSize)
+				remaining -= widthToAdd
 			}
-			childSizes[i] = SizeAcrossAxis(child, direction)
 		}
 	}
-
-	// Step 4: Final max size
-	finalMax := float32(0)
-	for _, sz := range childSizes {
-		if sz > finalMax {
-			finalMax = sz
-		}
-	}
-
-	return clamp(finalMax+padding, minSize)
 }
 
 func Position(element Element) {
@@ -245,6 +181,9 @@ func Position(element Element) {
 			childBase.Bounds.X = base.Bounds.X + base.PaddingLeft
 			cursor += childBase.Bounds.Height
 		}
+
+		fmt.Printf("Child %s position: X: %f, Y: %f\n", childBase.ID, childBase.Bounds.X, childBase.Bounds.Y)
+
 		//Only add gap if there is another child after the current one
 		if i < len(base.Children)-1 {
 			cursor += base.Gap
@@ -256,6 +195,7 @@ func Position(element Element) {
 }
 
 func Draw(element Element) {
+
 	if d, ok := element.(Drawable); ok {
 		d.Draw()
 	}
@@ -265,9 +205,64 @@ func Draw(element Element) {
 	}
 }
 
+/*
+UTILITY FUNCTIONS
+*/
 func clamp(val float32, min float32) float32 {
 	if val < min {
 		return min
 	}
 	return val
+}
+
+func getSizing(base *UIBase, axis Axis) SizingMode {
+	if axis == Horizontal {
+		return base.WidthSizing
+	}
+	return base.HeightSizing
+}
+
+func getMinSize(base *UIBase, axis Axis) float32 {
+	if axis == Horizontal {
+		return base.MinWidth
+	}
+	return base.MinHeight
+}
+
+func getFixedSize(base *UIBase, axis Axis) float32 {
+	if axis == Horizontal {
+		return base.Width
+	}
+	return base.Height
+}
+
+func getPadding(base *UIBase, axis Axis) float32 {
+	if axis == Horizontal {
+		return base.PaddingLeft + base.PaddingRight
+	}
+	return base.PaddingTop + base.PaddingBottom
+}
+
+func setSize(base *UIBase, axis Axis, value float32) {
+	if axis == Horizontal {
+		base.Width = value
+		base.Bounds.Width = value
+	} else {
+		base.Height = value
+		base.Bounds.Height = value
+	}
+}
+
+func getCrossAxis(dir Axis) Axis {
+	if dir == Horizontal {
+		return Vertical
+	}
+	return Horizontal
+}
+
+func getSize(base *UIBase, axis Axis) float32 {
+	if axis == Horizontal {
+		return base.Width
+	}
+	return base.Height
 }

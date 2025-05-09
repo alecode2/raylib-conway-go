@@ -1,126 +1,3 @@
-/*
-package main
-
-import (
-	"conway/event"
-	"conway/game"
-	"conway/render"
-	"conway/ui"
-	"fmt"
-
-	rl "github.com/gen2brain/raylib-go/raylib"
-)
-
-func main() {
-
-	state := game.GameState{
-		ScreenWidth:   int32(1280),
-		ScreenHeight:  int32(720),
-		FPS:           int32(60),
-		SimFPS:        int32(5),
-		CellSize:      int32(16),
-		SelectedColor: rl.Red,
-		IsMenuOpen:    true,
-	}
-
-	state.Step = 1 / float32(state.SimFPS)
-	state.BoardA = game.NewBoard(int(state.ScreenWidth)/int(state.CellSize), int(state.ScreenHeight)/int(state.CellSize))
-	state.BoardB = game.NewBoard(int(state.ScreenWidth)/int(state.CellSize), int(state.ScreenHeight)/int(state.CellSize))
-	state.Current = state.BoardA
-	state.Next = state.BoardB
-
-	// TODO: Delete this when we implement something more interesting
-	game.AddShapes(state.Current)
-
-	settings := game.Settings{
-		FadeOpacity: false,
-		FadeColor:   false,
-		FadeLength:  5,
-		GridColor:   rl.Gray,
-	}
-
-	rl.InitWindow(state.ScreenWidth, state.ScreenHeight, "raylib game of life v0.0.6")
-	defer rl.CloseWindow()
-
-	rl.SetTargetFPS(state.FPS)
-
-	//Initializing the Event Bus
-	bus := event.NewEventBus()
-
-	//Initializing the UIElements slice
-	UITree, UIRegistry := render.GetUI(state, settings, bus)
-
-	//Subscribe game logic to events
-	bus.Subscribe("toggle_pause", func(e event.Event) {
-		state.IsPaused = !state.IsPaused
-		fmt.Printf("Toggled Pause from Event Bus\n")
-		if pausePanel, ok := UIRegistry["pause_panel"]; ok {
-			pausePanel.SetVisible(state.IsPaused)
-		}
-	})
-
-	for !rl.WindowShouldClose() {
-		//Reading inputs
-		if rl.IsKeyPressed(rl.KeySpace) {
-			bus.Emit(event.Event{Name: "toggle_pause"})
-		}
-
-		if rl.IsKeyPressed(rl.KeyRight) {
-			state.StepForward = true
-			fmt.Printf("hit rightArrow, requested Forwards Step=%v\n", state.StepForward)
-		}
-
-		if rl.IsKeyPressed(rl.KeyR) {
-			state.ResetBoard()
-		}
-
-		mouse := rl.GetMousePosition()
-
-		//Handling UI Updates
-		ui.RefreshUIEventList(UITree)
-		ui.HandleUIHover(mouse)
-
-		if rl.IsMouseButtonDown(rl.MouseLeftButton) {
-			ui.HandleUIPress(mouse)
-		}
-
-		if rl.IsMouseButtonReleased(rl.MouseLeftButton) {
-			if !ui.HandleUIClick(mouse) {
-				gridX := int32(mouse.X) / int32(state.CellSize)
-				gridY := int32(mouse.Y) / int32(state.CellSize)
-				state.ToggleCell(gridX, gridY)
-			}
-
-		}
-
-		state.Lapsed += rl.GetFrameTime()
-
-		//Game Logic
-		if state.Lapsed >= state.Step && !state.IsPaused {
-			game.ConwayStep(&state)
-			state.SwapBoards()
-			state.Lapsed = 0
-		}
-
-		if state.IsPaused && state.StepForward {
-			game.ConwayStep(&state)
-			state.SwapBoards()
-			state.StepForward = false
-		}
-
-		//Drawing the creen
-		rl.BeginDrawing()
-		rl.ClearBackground(rl.RayWhite)
-
-		render.DrawGrid(state.CellSize, state.Current, settings)
-		render.DrawBoard(state.CellSize, state.Current, settings)
-		render.DrawUI(UITree)
-
-		rl.EndDrawing()
-	}
-}
-*/
-
 package main
 
 import (
@@ -135,42 +12,68 @@ func main() {
 
 	// Create root panel (full screen)
 	root := ui.NewPanel(rl.Gray)
-	ui.SetBounds(root, rl.NewRectangle(0, 0, 800, 600))
-	root.GetUIBase().Height = 600
-	root.GetUIBase().Width = 800
-	root.GetUIBase().Direction = ui.Horizontal
-
-	// Panel 1 (Fixed Size)
+	root_b := root.GetUIBase()
+	root_b.ID = "ROOT"
+	root_b.Direction = ui.Horizontal
+	root_b.Bounds.X = 0
+	root_b.Bounds.Y = 0
+	root_b.Width = 800
+	root_b.Height = 600
+	root_b.PaddingTop = 16
+	root_b.PaddingBottom = 16
+	root_b.PaddingLeft = 16
+	root_b.PaddingRight = 16
+	root_b.WidthSizing = ui.SizingFixed
+	root_b.HeightSizing = ui.SizingFixed
+	root_b.Gap = 32
+	// Panel 1 (Fit Size)
 	panel1 := ui.NewPanel(rl.Red)
-	panel1.GetUIBase().Height = 300
-	panel1.GetUIBase().Width = 400
-	panel1.GetUIBase().WidthSizing = ui.SizingFixed
-	panel1.GetUIBase().HeightSizing = ui.SizingFixed
+	panel1_b := panel1.GetUIBase()
+	panel1.ID = "Panel 1"
+	panel1_b.WidthSizing = ui.SizingFit
+	panel1_b.HeightSizing = ui.SizingFit
+	panel1_b.PaddingTop = 16
+	panel1_b.PaddingBottom = 16
+	panel1_b.PaddingLeft = 16
+	panel1_b.PaddingRight = 16
+	panel1_b.Gap = 32
 	panel1.EventHandlers[ui.EventClick] = func(evt ui.UIEvent) {
 		fmt.Println("Clicked Panel 1")
 	}
-	panel1.EventHandlers[ui.EventPress] = func(evt ui.UIEvent) {
-		fmt.Println("Pressed Panel 1")
-	}
 	ui.AddChild(root, panel1)
 
-	// Panel 2 (Grow Horizontal, Fixed Vertical)
-	panel2 := ui.NewPanel(rl.Blue)
-	panel2.GetUIBase().Height = 100
-	panel2.GetUIBase().MinWidth = 50
-	panel2.GetUIBase().WidthSizing = ui.SizingGrow
-	panel2.GetUIBase().HeightSizing = ui.SizingFixed
-	panel2.EventHandlers[ui.EventClick] = func(evt ui.UIEvent) {
-		fmt.Println("Clicked Panel 2")
+	// Sub Panel 1 (Fixed Size)
+	subpanel1 := ui.NewPanel(rl.Green)
+	subpanel1_b := subpanel1.GetUIBase()
+	subpanel1.ID = "Subpanel"
+	subpanel1_b.Width = 400
+	subpanel1_b.Height = 300
+	subpanel1_b.WidthSizing = ui.SizingFixed
+	subpanel1_b.HeightSizing = ui.SizingFixed
+	subpanel1.EventHandlers[ui.EventClick] = func(evt ui.UIEvent) {
+		fmt.Println("Clicked SubPanel 1")
 	}
-	panel2.EventHandlers[ui.EventPress] = func(evt ui.UIEvent) {
-		fmt.Println("Pressed Panel 2")
-	}
-	ui.AddChild(root, panel2)
+	ui.AddChild(panel1, subpanel1)
 
-	// Run layout system (optional for this step)
+	/*
+		// Panel 2 (Grow Horizontal, Fixed Vertical)
+		panel2 := ui.NewPanel(rl.Blue)
+		panel2_b := panel2.GetUIBase()
+		panel2_b.ID = "PANEL 2"
+		panel2_b.MinWidth = 50
+		panel2_b.MinHeight = 100
+		panel2_b.WidthSizing = ui.SizingGrow
+		panel2_b.HeightSizing = ui.SizingGrow
+		panel2.EventHandlers[ui.EventPress] = func(evt ui.UIEvent) {
+			fmt.Println("Pressed Panel 2")
+		}
+		ui.AddChild(root, panel2)
+	*/
+
 	ui.Size(root)
 	ui.Position(root)
+
+	fmt.Printf("Layout computed\n")
 
 	// Main rendering loop
 	for !rl.WindowShouldClose() {
@@ -188,8 +91,8 @@ func main() {
 			ui.HandleUIClick(mouse)
 		}
 
-		// Draw all panels
 		ui.Draw(root)
+
 		rl.EndDrawing()
 	}
 
