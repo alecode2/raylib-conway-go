@@ -7,19 +7,26 @@ import (
 
 func Size(root Element) {
 	// Bottom-up phase: Fit sizing
-	SizeAlongAxis(root)
-	SizeAcrossAxis(root)
+	SizeRecursive(root)
 
 	// Top-down phase: Grow sizing
 	ApplyGrowSizes(root, Horizontal)
 	ApplyGrowSizes(root, Vertical)
 }
 
+func SizeRecursive(element Element) {
+	SizeAlongAxis(element)
+	SizeAcrossAxis(element)
+
+	for _, child := range element.GetUIBase().Children {
+		SizeRecursive(child)
+	}
+}
+
 func SizeAlongAxis(element Element) float32 {
 	base := element.GetUIBase()
 	axis := base.Direction
 	sizing := getSizing(base, axis)
-	fmt.Printf("Sizing for %s on axis %v: %v\n", base.ID, axis, sizing)
 
 	// Fixed-size shortcut
 	if sizing == SizingFixed {
@@ -58,10 +65,9 @@ func SizeAcrossAxis(element Element) float32 {
 	base := element.GetUIBase()
 	axis := getCrossAxis(base.Direction)
 	sizing := getSizing(base, axis)
-	fmt.Printf("Sizing for %s on axis %v: %v\n", base.ID, axis, sizing)
 
 	if sizing == SizingFixed {
-		fmt.Printf("Sizing for %s on axis %v: %v\n", base.ID, axis, sizing)
+		fmt.Printf("Fixed size for %s on axis %v: %f\n", base.ID, axis, getFixedSize(base, axis))
 		size := getFixedSize(base, axis)
 		setSize(base, axis, size)
 		return size

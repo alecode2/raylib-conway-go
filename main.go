@@ -55,20 +55,18 @@ func main() {
 	}
 	ui.AddChild(panel1, subpanel1)
 
-	/*
-		// Panel 2 (Grow Horizontal, Fixed Vertical)
-		panel2 := ui.NewPanel(rl.Blue)
-		panel2_b := panel2.GetUIBase()
-		panel2_b.ID = "PANEL 2"
-		panel2_b.MinWidth = 50
-		panel2_b.MinHeight = 100
-		panel2_b.WidthSizing = ui.SizingGrow
-		panel2_b.HeightSizing = ui.SizingGrow
-		panel2.EventHandlers[ui.EventPress] = func(evt ui.UIEvent) {
-			fmt.Println("Pressed Panel 2")
-		}
-		ui.AddChild(root, panel2)
-	*/
+	// Panel 2 (Grow Horizontal, Fixed Vertical)
+	panel2 := ui.NewPanel(rl.Blue)
+	panel2_b := panel2.GetUIBase()
+	panel2_b.ID = "PANEL 2"
+	panel2_b.MinWidth = 50
+	panel2_b.MinHeight = 100
+	panel2_b.WidthSizing = ui.SizingGrow
+	panel2_b.HeightSizing = ui.SizingGrow
+	panel2.EventHandlers[ui.EventPress] = func(evt ui.UIEvent) {
+		fmt.Println("Pressed Panel 2")
+	}
+	ui.AddChild(root, panel2)
 
 	ui.Size(root)
 	ui.Position(root)
