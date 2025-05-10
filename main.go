@@ -25,7 +25,6 @@ func main() {
 	root_b.PaddingRight = 16
 	root_b.WidthSizing = ui.SizingFixed
 	root_b.HeightSizing = ui.SizingFixed
-	root_b.Gap = 32
 	// Panel 1 (Fit Size)
 	panel1 := ui.NewPanel(rl.Red)
 	panel1_b := panel1.GetUIBase()
@@ -36,7 +35,6 @@ func main() {
 	panel1_b.PaddingBottom = 16
 	panel1_b.PaddingLeft = 16
 	panel1_b.PaddingRight = 16
-	panel1_b.Gap = 32
 	panel1.EventHandlers[ui.EventClick] = func(evt ui.UIEvent) {
 		fmt.Println("Clicked Panel 1")
 	}
