@@ -11,7 +11,7 @@ func main() {
 	rl.SetTargetFPS(60)
 
 	// Create root panel (full screen)
-	root := ui.NewPanel(rl.Gray)
+	root := ui.NewPanel(rl.White)
 	root_b := root.GetUIBase()
 	root_b.ID = "ROOT"
 	root_b.Direction = ui.Horizontal
@@ -25,10 +25,12 @@ func main() {
 	root_b.PaddingRight = 16
 	root_b.WidthSizing = ui.SizingFixed
 	root_b.HeightSizing = ui.SizingFixed
-	// Panel 1 (Fit Size)
-	panel1 := ui.NewPanel(rl.Red)
+
+	panel1 := ui.NewPanel(rl.Gray)
 	panel1_b := panel1.GetUIBase()
-	panel1.ID = "Panel 1"
+	panel1.ID = "PANEL_1"
+	panel1_b.Direction = ui.Horizontal
+	panel1_b.Gap = 16
 	panel1_b.WidthSizing = ui.SizingFit
 	panel1_b.HeightSizing = ui.SizingFit
 	panel1_b.PaddingTop = 16
@@ -40,10 +42,9 @@ func main() {
 	}
 	ui.AddChild(root, panel1)
 
-	// Sub Panel 1 (Fixed Size)
-	subpanel1 := ui.NewPanel(rl.Green)
+	subpanel1 := ui.NewPanel(rl.Blue)
 	subpanel1_b := subpanel1.GetUIBase()
-	subpanel1.ID = "Subpanel"
+	subpanel1.ID = "SUBPANEL_1"
 	subpanel1_b.Width = 400
 	subpanel1_b.Height = 300
 	subpanel1_b.WidthSizing = ui.SizingFixed
@@ -53,10 +54,9 @@ func main() {
 	}
 	ui.AddChild(panel1, subpanel1)
 
-	// Panel 2 (Grow Horizontal, Fixed Vertical)
 	panel2 := ui.NewPanel(rl.Blue)
 	panel2_b := panel2.GetUIBase()
-	panel2_b.ID = "PANEL 2"
+	panel2_b.ID = "SUBPANEL_2"
 	panel2_b.MinWidth = 50
 	panel2_b.MinHeight = 100
 	panel2_b.WidthSizing = ui.SizingGrow
@@ -64,10 +64,23 @@ func main() {
 	panel2.EventHandlers[ui.EventPress] = func(evt ui.UIEvent) {
 		fmt.Println("Pressed Panel 2")
 	}
-	ui.AddChild(root, panel2)
+	ui.AddChild(panel1, panel2)
+
+	panel3 := ui.NewPanel(rl.Blue)
+	panel3_b := panel3.GetUIBase()
+	panel3_b.ID = "SUBPANEL_3"
+	panel3_b.MinWidth = 100
+	panel3_b.MinHeight = 100
+	panel3_b.WidthSizing = ui.SizingGrow
+	panel3_b.HeightSizing = ui.SizingGrow
+	panel3.EventHandlers[ui.EventPress] = func(evt ui.UIEvent) {
+		fmt.Println("Pressed Panel 3")
+	}
+	ui.AddChild(panel1, panel3)
 
 	ui.Size(root)
 	ui.Position(root)
+	ui.PrintLayout(root, 0)
 
 	fmt.Printf("Layout computed\n")
 

@@ -2,7 +2,9 @@ package ui
 
 import (
 	//"fmt"
+	"fmt"
 	"math"
+	"strings"
 )
 
 func Size(root Element) {
@@ -27,7 +29,7 @@ func SizeAlongAxis(element Element) float32 {
 	axis := base.Direction
 	sizing := getSizing(base, axis)
 
-	// Fixed-size shortcut
+	// Fixed‐size shortcut
 	if sizing == SizingFixed {
 		size := getFixedSize(base, axis)
 		setSize(base, axis, size)
@@ -35,25 +37,55 @@ func SizeAlongAxis(element Element) float32 {
 	}
 
 	// Leaf fallback
-	if len(base.Children) == 0 && sizing != SizingGrow {
+	if len(base.Children) == 0 {
+
 		size := getFixedSize(base, axis)
+		if sizing == SizingGrow {
+			size = getMinSize(base, axis)
+		}
 		setSize(base, axis, size)
 		return size
 	}
 
-	// Sum child sizes
-	var total float32
+	// --- 1) Recurse into children first ---
 	for _, child := range base.Children {
-		childSize := SizeAlongAxis(child)
-		total += childSize
+		SizeAlongAxis(child)
 	}
-	total += base.Gap * float32(max(0, len(base.Children)-1))
-	total += getPadding(base, axis)
+
+	// --- 2) Now log and sum contributions ---
+	fmt.Printf("[SizeAlongAxis Fit] ID=%s | axis=%v\n", base.ID, axis)
+	var sumChildren float32
+	for i, child := range base.Children {
+		cb := child.GetUIBase()
+		childSizing := getSizing(cb, axis)
+
+		var childSize float32
+		if childSizing == SizingGrow {
+			childSize = getMinSize(cb, axis)
+		} else {
+
+			childSize = getSize(cb, axis)
+		}
+
+		fmt.Printf("  child[%d] %s mode=%v => sizeContribution=%.1f\n",
+			i, cb.ID, childSizing, childSize)
+		sumChildren += childSize
+	}
+
+	gapTotal := base.Gap * float32(max(0, len(base.Children)-1))
+	padding := getPadding(base, axis)
+	total := sumChildren + gapTotal + padding
+
+	fmt.Printf(
+		"  sumChildren=%.1f, gaps(total)=%.1f, padding=%.1f, total=%.1f\n",
+		sumChildren, gapTotal, padding, total,
+	)
 
 	// Clamp and assign
-	clampedTotal := max(total, getMinSize(base, axis))
-	setSize(base, axis, clampedTotal)
-	return clampedTotal
+	clamped := max(total, getMinSize(base, axis))
+	setSize(base, axis, clamped)
+	logSize("SizeAlongAxis return", base, axis, clamped)
+	return clamped
 }
 
 func SizeAcrossAxis(element Element) float32 {
@@ -66,29 +98,52 @@ func SizeAcrossAxis(element Element) float32 {
 		size := getFixedSize(base, axis)
 		setSize(base, axis, size)
 		return size
+
 	case SizingGrow:
 		size := getMinSize(base, axis)
 		setSize(base, axis, size)
 		return size
-	default:
-		// Compute max size from children
+
+	case SizingFit:
+		fmt.Printf("[SizeAcrossAxis Fit] ID=%s | crossAxis=%v\n", base.ID, axis)
 		var maxSize float32
 		for _, child := range base.Children {
-			size := SizeAcrossAxis(child)
-			if size > maxSize {
-				maxSize = size
+			cb := child.GetUIBase()
+			childSizing := getSizing(cb, axis)
+
+			var childSize float32
+			if childSizing == SizingGrow {
+				childSize = getMinSize(cb, axis)
+			} else {
+				childSize = getSize(cb, axis)
+			}
+
+			fmt.Printf("  child %s sizing=%v => sizeContribution=%.1f\n",
+				cb.ID, childSizing, childSize)
+
+			if childSize > maxSize {
+				maxSize = childSize
 			}
 		}
-		maxSize += getPadding(base, axis)
 
-		clampedSize := max(maxSize, getMinSize(base, axis))
+		padding := getPadding(base, axis)
+		total := maxSize + padding
+
+		fmt.Printf("  maxChildBeforePadding=%.1f, padding=%.1f, total=%.1f\n",
+			maxSize, padding, total)
+
+		clampedSize := max(total, getMinSize(base, axis))
 		setSize(base, axis, clampedSize)
+		logSize("SizeAcrossAxis return", base, axis, clampedSize)
 		return clampedSize
 	}
+
+	return 0
 }
 
 func ApplyGrowSizes(element Element) {
 	base := element.GetUIBase()
+	fmt.Printf("[ApplyGrowSizes] ID=%s\n", base.ID)
 
 	GrowAlongAxis(base, base.Direction)
 	GrowAcrossAxis(base, base.Direction)
@@ -99,6 +154,7 @@ func ApplyGrowSizes(element Element) {
 }
 
 func GrowAlongAxis(parent *UIBase, axis Axis) {
+	fmt.Printf("[GrowAlongAxis] Parent=%s | Axis=%v\n", parent.ID, axis)
 	// 1) Collect growable children and total used space
 	var growable []Element
 	used := float32(0)
@@ -163,13 +219,22 @@ func GrowAlongAxis(parent *UIBase, axis Axis) {
 
 func GrowAcrossAxis(parent *UIBase, axis Axis) {
 	cross := getCrossAxis(axis)
-	padding := getPadding(parent, cross)
-	avail := getSize(parent, cross) - padding
+	fmt.Printf("[GrowAcrossAxis] Parent=%s | CrossAxis=%v\n", parent.ID, cross)
+
+	// If parent is Fit in the cross axis, do not grow children — it's up to them to determine their own size
+	if getSizing(parent, cross) == SizingFit {
+		fmt.Printf("[GrowAcrossAxis] SKIP due to SizingFit on %s\n", parent.ID)
+		return
+	}
+
+	// Otherwise, children are allowed to grow to fill the parent's content area
+	available := getSize(parent, cross) - getPadding(parent, cross)
 
 	for _, child := range parent.Children {
 		cb := child.GetUIBase()
+
 		if getSizing(cb, cross) == SizingGrow {
-			setSize(cb, cross, avail)
+			setSize(cb, cross, available)
 		}
 	}
 }
@@ -258,6 +323,7 @@ func getPadding(base *UIBase, axis Axis) float32 {
 }
 
 func setSize(base *UIBase, axis Axis, value float32) {
+	logSize("setSize", base, axis, value)
 	if axis == Horizontal {
 		base.Width = value
 		base.Bounds.Width = value
@@ -279,4 +345,22 @@ func getSize(base *UIBase, axis Axis) float32 {
 		return base.Width
 	}
 	return base.Height
+}
+
+func logSize(prefix string, base *UIBase, axis Axis, size float32) {
+	axisName := "Horizontal"
+	if axis == Vertical {
+		axisName = "Vertical"
+	}
+	fmt.Printf("[%s] ID=%s | Axis=%s | Size=%.2f\n", prefix, base.ID, axisName, size)
+}
+
+func PrintLayout(element Element, indent int) {
+	base := element.GetUIBase()
+	pad := strings.Repeat("  ", indent)
+	fmt.Printf("%sID=%s W=%.1f H=%.1f\n", pad, base.ID, base.Bounds.Width, base.Bounds.Height)
+
+	for _, child := range base.Children {
+		PrintLayout(child, indent+1)
+	}
 }
