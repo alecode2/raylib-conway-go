@@ -1,7 +1,6 @@
 package ui
 
 import (
-	//"fmt"
 	"fmt"
 	"math"
 	"strings"
@@ -41,7 +40,6 @@ func SizeAlongAxis(element Element) float32 {
 		if meas, ok := element.(Measurable); ok {
 			m := meas.Measure(axis)
 			setSize(base, axis, m)
-			logSize("SizeAlongAxis (measured)", base, axis, m)
 			return m
 		}
 	}
@@ -63,9 +61,8 @@ func SizeAlongAxis(element Element) float32 {
 	}
 
 	// --- 2) Now log and sum contributions ---
-	fmt.Printf("[SizeAlongAxis Fit] ID=%s | axis=%v\n", base.ID, axis)
 	var sumChildren float32
-	for i, child := range base.Children {
+	for _, child := range base.Children {
 		cb := child.GetUIBase()
 		childSizing := getSizing(cb, axis)
 
@@ -77,8 +74,6 @@ func SizeAlongAxis(element Element) float32 {
 			childSize = getSize(cb, axis)
 		}
 
-		fmt.Printf("  child[%d] %s mode=%v => sizeContribution=%.1f\n",
-			i, cb.ID, childSizing, childSize)
 		sumChildren += childSize
 	}
 
@@ -86,15 +81,9 @@ func SizeAlongAxis(element Element) float32 {
 	padding := getPadding(base, axis)
 	total := sumChildren + gapTotal + padding
 
-	fmt.Printf(
-		"  sumChildren=%.1f, gaps(total)=%.1f, padding=%.1f, total=%.1f\n",
-		sumChildren, gapTotal, padding, total,
-	)
-
 	// Clamp and assign
 	clamped := max(total, getMinSize(base, axis))
 	setSize(base, axis, clamped)
-	logSize("SizeAlongAxis return", base, axis, clamped)
 	return clamped
 }
 
@@ -115,13 +104,10 @@ func SizeAcrossAxis(element Element) float32 {
 		return size
 
 	case SizingFit:
-		fmt.Printf("[SizeAcrossAxis Fit] ID=%s | crossAxis=%v\n", base.ID, axis)
-
 		// FIT: if this element can measure itself, use that
 		if meas, ok := element.(Measurable); ok {
 			m := meas.Measure(axis)
 			setSize(base, axis, m)
-			logSize("SizeAcrossAxis (measured)", base, axis, m)
 			return m
 		}
 
@@ -137,9 +123,6 @@ func SizeAcrossAxis(element Element) float32 {
 				childSize = getSize(cb, axis)
 			}
 
-			fmt.Printf("  child %s sizing=%v => sizeContribution=%.1f\n",
-				cb.ID, childSizing, childSize)
-
 			if childSize > maxSize {
 				maxSize = childSize
 			}
@@ -148,12 +131,8 @@ func SizeAcrossAxis(element Element) float32 {
 		padding := getPadding(base, axis)
 		total := maxSize + padding
 
-		fmt.Printf("  maxChildBeforePadding=%.1f, padding=%.1f, total=%.1f\n",
-			maxSize, padding, total)
-
 		clampedSize := max(total, getMinSize(base, axis))
 		setSize(base, axis, clampedSize)
-		logSize("SizeAcrossAxis return", base, axis, clampedSize)
 		return clampedSize
 	}
 
@@ -162,7 +141,6 @@ func SizeAcrossAxis(element Element) float32 {
 
 func ApplyGrowSizes(element Element) {
 	base := element.GetUIBase()
-	fmt.Printf("[ApplyGrowSizes] ID=%s\n", base.ID)
 
 	GrowAlongAxis(base, base.Direction)
 	GrowAcrossAxis(base, base.Direction)
@@ -173,7 +151,6 @@ func ApplyGrowSizes(element Element) {
 }
 
 func GrowAlongAxis(parent *UIBase, axis Axis) {
-	fmt.Printf("[GrowAlongAxis] Parent=%s | Axis=%v\n", parent.ID, axis)
 	// 1) Collect growable children and total used space
 	var growable []Element
 	used := float32(0)
@@ -238,11 +215,9 @@ func GrowAlongAxis(parent *UIBase, axis Axis) {
 
 func GrowAcrossAxis(parent *UIBase, axis Axis) {
 	cross := getCrossAxis(axis)
-	fmt.Printf("[GrowAcrossAxis] Parent=%s | CrossAxis=%v\n", parent.ID, cross)
 
 	// If parent is Fit in the cross axis, do not grow children — it's up to them to determine their own size
 	if getSizing(parent, cross) == SizingFit {
-		fmt.Printf("[GrowAcrossAxis] SKIP due to SizingFit on %s\n", parent.ID)
 		return
 	}
 
@@ -351,7 +326,9 @@ func Draw(element Element) {
 		d.Draw()
 	}
 
-	for _, child := range element.GetUIBase().Children {
+	base := element.GetUIBase()
+
+	for _, child := range base.Children {
 		Draw(child)
 	}
 }
@@ -395,7 +372,6 @@ func getPadding(base *UIBase, axis Axis) float32 {
 }
 
 func setSize(base *UIBase, axis Axis, value float32) {
-	logSize("setSize", base, axis, value)
 	if axis == Horizontal {
 		base.Width = value
 		base.Bounds.Width = value
