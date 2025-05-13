@@ -47,6 +47,14 @@ const (
 	CrossAlignEnd
 )
 
+type TextAlign int
+
+const (
+	AlignTextLeft = iota
+	AlignTextCenter
+	AlignTextRight
+)
+
 /*
 UI BASE TYPE
 */

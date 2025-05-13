@@ -36,6 +36,16 @@ func SizeAlongAxis(element Element) float32 {
 		return size
 	}
 
+	// FIT: if this element can measure itself, use that
+	if sizing == SizingFit {
+		if meas, ok := element.(Measurable); ok {
+			m := meas.Measure(axis)
+			setSize(base, axis, m)
+			logSize("SizeAlongAxis (measured)", base, axis, m)
+			return m
+		}
+	}
+
 	// Leaf fallback
 	if len(base.Children) == 0 {
 
@@ -106,6 +116,15 @@ func SizeAcrossAxis(element Element) float32 {
 
 	case SizingFit:
 		fmt.Printf("[SizeAcrossAxis Fit] ID=%s | crossAxis=%v\n", base.ID, axis)
+
+		// FIT: if this element can measure itself, use that
+		if meas, ok := element.(Measurable); ok {
+			m := meas.Measure(axis)
+			setSize(base, axis, m)
+			logSize("SizeAcrossAxis (measured)", base, axis, m)
+			return m
+		}
+
 		var maxSize float32
 		for _, child := range base.Children {
 			cb := child.GetUIBase()
