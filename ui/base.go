@@ -28,6 +28,25 @@ const (
 	Vertical
 )
 
+//POSITIONING
+type MainAxisAlignment int
+
+const (
+	AlignStart MainAxisAlignment = iota
+	AlignCenter
+	AlignEnd
+	AlignSpaceBetween
+	AlignSpaceAround
+)
+
+type CrossAxisAlignment int
+
+const (
+	CrossAlignStart CrossAxisAlignment = iota
+	CrossAlignCenter
+	CrossAlignEnd
+)
+
 /*
 UI BASE TYPE
 */
@@ -56,6 +75,8 @@ type UIBase struct {
 	PaddingLeft   float32
 	Gap           float32
 	Direction     Axis
+	MainAlign     MainAxisAlignment
+	CrossAlign    CrossAxisAlignment
 }
 
 func NewUIBase() UIBase {

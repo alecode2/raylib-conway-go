@@ -25,6 +25,8 @@ func main() {
 	root_b.PaddingRight = 16
 	root_b.WidthSizing = ui.SizingFixed
 	root_b.HeightSizing = ui.SizingFixed
+	root_b.MainAlign = ui.AlignCenter
+	root_b.CrossAlign = ui.CrossAlignEnd
 
 	panel1 := ui.NewPanel(rl.Gray)
 	panel1_b := panel1.GetUIBase()
@@ -37,6 +39,8 @@ func main() {
 	panel1_b.PaddingBottom = 16
 	panel1_b.PaddingLeft = 16
 	panel1_b.PaddingRight = 16
+	panel1_b.MainAlign = ui.AlignCenter
+	panel1_b.CrossAlign = ui.CrossAlignCenter
 	panel1.EventHandlers[ui.EventClick] = func(evt ui.UIEvent) {
 		fmt.Println("Clicked Panel 1")
 	}

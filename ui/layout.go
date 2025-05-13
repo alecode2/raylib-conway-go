@@ -241,35 +241,88 @@ func GrowAcrossAxis(parent *UIBase, axis Axis) {
 
 func Position(element Element) {
 	base := element.GetUIBase()
-	cursor := float32(0)
 
-	//The axis in which we are stacking elements needs to have the current cursor kept in a variable
-	if base.Direction == Horizontal {
-		cursor = base.Bounds.X + base.PaddingLeft
-	} else {
-		cursor = base.Bounds.Y + base.PaddingTop
+	// Build content box & child sizes
+	main := base.Direction
+	start, size := getContentBox(base, main)
+
+	n := len(base.Children)
+	sizes := make([]float32, n)
+	var total float32
+	for i, c := range base.Children {
+		cb := c.GetUIBase()
+		sizes[i] = getSize(cb, main)
+		total += sizes[i]
 	}
 
-	for i, child := range base.Children {
-		childBase := child.GetUIBase()
+	// Distribute
+	cursor, usedGap := distributeMain(
+		start, size, n, total, base.Gap, base.MainAlign,
+	)
 
-		if base.Direction == Horizontal {
-			childBase.Bounds.X = cursor
-			childBase.Bounds.Y = base.Bounds.Y + base.PaddingTop
-			cursor += childBase.Bounds.Width
+	// Position each child
+	for i, c := range base.Children {
+		cb := c.GetUIBase()
+		if main == Horizontal {
+			cb.Bounds.X = cursor
 		} else {
-			childBase.Bounds.Y = cursor
-			childBase.Bounds.X = base.Bounds.X + base.PaddingLeft
-			cursor += childBase.Bounds.Height
+			cb.Bounds.Y = cursor
 		}
 
-		//Only add gap if there is another child after the current one
-		if i < len(base.Children)-1 {
-			cursor += base.Gap
-		}
+		// Cross align
+		alignCross(base, cb, base.CrossAlign)
 
-		//Recurse down to the leafs
-		Position(child)
+		cursor += sizes[i] + usedGap
+	}
+
+	// Recurse
+	for _, c := range base.Children {
+		Position(c)
+	}
+}
+
+func distributeMain(start, size float32, count int, totalChildren float32, gap float32, align MainAxisAlignment) (cursor, outGap float32) {
+	free := size - totalChildren - gap*float32(max(0, count-1))
+	switch align {
+	case AlignStart:
+		return start, gap
+	case AlignEnd:
+		return start + free, gap
+	case AlignCenter:
+		return start + free/2, gap
+	case AlignSpaceBetween:
+		if count > 1 {
+			return start, free / float32(count-1)
+		}
+		return start + free/2, 0
+	case AlignSpaceAround:
+		if count > 0 {
+			g := free / float32(count)
+			return start + g/2, g
+		}
+		return start, 0
+	}
+	// fallback
+	return start, gap
+}
+
+func alignCross(base *UIBase, child *UIBase, align CrossAxisAlignment) {
+	axis := getCrossAxis(base.Direction)
+	start, size := getContentBox(base, axis)
+	childSize := getSize(child, axis)
+	var pos float32
+	switch align {
+	case CrossAlignStart:
+		pos = start
+	case CrossAlignEnd:
+		pos = start + (size - childSize)
+	case CrossAlignCenter:
+		pos = start + (size-childSize)/2
+	}
+	if axis == Horizontal {
+		child.Bounds.X = pos
+	} else {
+		child.Bounds.Y = pos
 	}
 }
 
@@ -345,6 +398,21 @@ func getSize(base *UIBase, axis Axis) float32 {
 		return base.Width
 	}
 	return base.Height
+}
+
+func getContentBox(base *UIBase, axis Axis) (start, size float32) {
+	var padStart, padEnd float32
+	if axis == Horizontal {
+		start = base.Bounds.X
+		padStart = base.PaddingLeft
+		padEnd = base.PaddingRight
+	} else {
+		start = base.Bounds.Y
+		padStart = base.PaddingTop
+		padEnd = base.PaddingBottom
+	}
+
+	return start + padStart, getSize(base, axis) - (padStart + padEnd)
 }
 
 func logSize(prefix string, base *UIBase, axis Axis, size float32) {
