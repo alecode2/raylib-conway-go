@@ -76,19 +76,20 @@ type UIBase struct {
 	MinHeight    float32
 	WidthSizing  SizingMode
 	HeightSizing SizingMode
+	Direction    Axis
+	MainAlign    MainAxisAlignment
+	CrossAlign   CrossAxisAlignment
+	ZIndex       int
 
 	PaddingTop    float32
 	PaddingRight  float32
 	PaddingBottom float32
 	PaddingLeft   float32
 	Gap           float32
-	Direction     Axis
-	MainAlign     MainAxisAlignment
-	CrossAlign    CrossAxisAlignment
 }
 
-func NewUIBase() UIBase {
-	return UIBase{
+func NewUIBase() *UIBase {
+	return &UIBase{
 		State:         UIStateDefault,
 		Visible:       true,
 		Children:      []Element{},

@@ -3,7 +3,7 @@ package ui
 import rl "github.com/gen2brain/raylib-go/raylib"
 
 type Panel struct {
-	UIBase
+	*UIBase
 	Color rl.Color
 }
 
@@ -15,7 +15,7 @@ func NewPanel(color rl.Color) *Panel {
 }
 
 func (p *Panel) GetUIBase() *UIBase {
-	return &p.UIBase
+	return p.UIBase
 }
 
 func (p *Panel) Draw() {

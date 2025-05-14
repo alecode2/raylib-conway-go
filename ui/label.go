@@ -7,7 +7,7 @@ import (
 )
 
 type Label struct {
-	UIBase
+	*UIBase
 	Text      string
 	Font      rl.Font
 	FontSize  float32
@@ -17,7 +17,7 @@ type Label struct {
 	Spacing   float32
 }
 
-func NewLabel(text string, font rl.Font, fsize float32, fcolor rl.Color, tAlign TextAlign, wrap bool) *Label {
+func NewLabel(text string, font rl.Font, fsize float32, fcolor rl.Color, tAlign TextAlign, wrap bool, spacing float32) *Label {
 	return &Label{
 		UIBase:    NewUIBase(),
 		Text:      text,
@@ -31,13 +31,13 @@ func NewLabel(text string, font rl.Font, fsize float32, fcolor rl.Color, tAlign 
 }
 
 func (l *Label) GetUIBase() *UIBase {
-	return &l.UIBase
+	return l.UIBase
 }
 
 func (l *Label) Draw() {
 	font := l.Font
 	fontSize := l.FontSize
-	spacing := float32(1)
+	spacing := l.Spacing
 
 	// 1) Split into lines
 	lines := []string{l.Text}
