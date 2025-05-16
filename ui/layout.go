@@ -321,12 +321,15 @@ func alignCross(base *UIBase, child *UIBase, align CrossAxisAlignment) {
 }
 
 func Draw(element Element) {
+	base := element.GetUIBase()
+
+	if !base.Visible {
+		return
+	}
 
 	if d, ok := element.(Drawable); ok {
 		d.Draw()
 	}
-
-	base := element.GetUIBase()
 
 	for _, child := range base.Children {
 		Draw(child)

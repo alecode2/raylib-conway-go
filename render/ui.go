@@ -1,7 +1,6 @@
 package render
 
 import (
-	"conway/assets"
 	"conway/event"
 	"conway/game"
 	ui "conway/ui"
@@ -14,52 +13,32 @@ type EventBus = event.EventBus
 type GameState = game.GameState
 type Settings = game.Settings
 
-func InitUI() ui.Element {
+func InitUI(state GameState, settings Settings, bus *EventBus) (ui.Element, map[string]ui.Element) {
 
-	root := &ui.Panel{
+	root := &ui.Container{
 		UIBase: &ui.UIBase{
-			ID:            "ROOT",
-			Direction:     ui.Horizontal,
-			Width:         800,
-			Height:        600,
-			PaddingTop:    16,
-			PaddingBottom: 16,
-			PaddingLeft:   16,
-			PaddingRight:  16,
-			Gap:           8,
-			WidthSizing:   ui.SizingFixed,
-			HeightSizing:  ui.SizingFixed,
-			MainAlign:     ui.AlignCenter,
-			CrossAlign:    ui.CrossAlignCenter,
-		},
-		Color: rl.LightGray,
-	}
-
-	// Load the texture from file
-	texture := assets.LoadTexture("assets/PNG/Blue/Default/star.png") // Make sure the file exists
-
-	icon := &ui.Image{
-		UIBase: &ui.UIBase{
-			ID:           "ICON",
-			Width:        32,
-			Height:       30,
+			ID:           "ROOT",
+			Direction:    ui.Horizontal,
+			Width:        float32(state.ScreenWidth),
+			Height:       float32(state.ScreenHeight),
 			WidthSizing:  ui.SizingFixed,
 			HeightSizing: ui.SizingFixed,
+			MainAlign:    ui.AlignCenter,
+			CrossAlign:   ui.CrossAlignCenter,
+			Visible:      true,
 		},
-		Texture: texture,
-		Tint:    rl.White,
 	}
-	ui.AddChild(root, icon)
 
 	label := &ui.Label{
 		UIBase: &ui.UIBase{
 			ID:           "GREETING_LABEL",
 			WidthSizing:  ui.SizingFit,
 			HeightSizing: ui.SizingFit,
+			Visible:      false,
 		},
 		Text:      "PAUSED",
 		Font:      rl.GetFontDefault(),
-		FontSize:  24,
+		FontSize:  64,
 		FontColor: rl.Black,
 		TextAlign: ui.AlignTextCenter,
 		Wrap:      false,
@@ -68,18 +47,10 @@ func InitUI() ui.Element {
 
 	ui.AddChild(root, label)
 
-	icon2 := &ui.Image{
-		UIBase: &ui.UIBase{
-			ID:           "ICON",
-			Width:        32,
-			Height:       30,
-			WidthSizing:  ui.SizingFixed,
-			HeightSizing: ui.SizingFixed,
-		},
-		Texture: texture,
-		Tint:    rl.White,
-	}
-	ui.AddChild(root, icon2)
+	//Populating the ui registry
+	uiMap := make(map[string]ui.Element)
+	uiMap["ROOT"] = root
+	uiMap["GREETING_LABEL"] = label
 
-	return root
+	return root, uiMap
 }
