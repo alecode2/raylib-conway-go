@@ -1,14 +1,17 @@
 package ui
 
-import rl "github.com/gen2brain/raylib-go/raylib"
+import (
+	rl "github.com/gen2brain/raylib-go/raylib"
+)
 
 // Event types
 const (
-	EventHover = "hover"
-	EventClick = "click"
-	EventFocus = "focus"
-	EventBlur  = "blur"
-	EventPress = "press"
+	EventHover   = "hover"
+	EventClick   = "click"
+	EventFocus   = "focus"
+	EventBlur    = "blur"
+	EventPress   = "press"
+	EventRelease = "release"
 )
 
 type UIEvent struct {
@@ -22,6 +25,8 @@ type UIEventElement struct {
 }
 
 var uiEventList []UIEventElement
+
+var currentPressedElement Element
 
 func RefreshUIEventList(root Element) {
 	uiEventList = uiEventList[:0]
@@ -55,7 +60,7 @@ func HandleUIHover(mouse rl.Vector2) {
 		base := elem.GetUIBase()
 
 		if hovered {
-			if base.State != UIStateHovered {
+			if base.State != UIStateHovered && base.State != UIStatePressed {
 				base.State = UIStateHovered
 				dispatchEvent(elem, UIEvent{Name: EventHover, MousePosition: mouse})
 			}
@@ -70,6 +75,7 @@ func HandleUIPress(mouse rl.Vector2) bool {
 	for i := len(uiEventList) - 1; i >= 0; i-- {
 		elem := uiEventList[i].Element
 		if hoverable, ok := elem.(Hoverable); ok && hoverable.IsHovered(mouse) {
+			currentPressedElement = elem
 			dispatchPressFrom(elem)
 			return true
 		}
@@ -84,6 +90,21 @@ func HandleUIClick(mouse rl.Vector2) bool {
 			dispatchClickFrom(elem)
 			return true
 		}
+	}
+	return false
+}
+
+func HandleUIRelease(mouse rl.Vector2) bool {
+	if currentPressedElement != nil {
+		dispatchReleaseFrom(currentPressedElement)
+
+		// Optional: if the mouse is still over the same element, treat it as a click
+		if hoverable, ok := currentPressedElement.(Hoverable); ok && hoverable.IsHovered(mouse) {
+			dispatchClickFrom(currentPressedElement)
+		}
+
+		currentPressedElement = nil
+		return true
 	}
 	return false
 }
@@ -109,6 +130,18 @@ func dispatchClickFrom(elem Element) {
 
 	if elem.GetUIBase().PropagateEvents && elem.GetUIBase().Parent != nil {
 		dispatchClickFrom(elem.GetUIBase().Parent)
+	}
+}
+
+func dispatchReleaseFrom(elem Element) {
+	dispatchEvent(elem, UIEvent{
+		Name:          EventRelease,
+		MousePosition: rl.GetMousePosition(),
+	})
+	elem.GetUIBase().State = UIStateDefault
+
+	if elem.GetUIBase().PropagateEvents && elem.GetUIBase().Parent != nil {
+		dispatchReleaseFrom(elem.GetUIBase().Parent)
 	}
 }
 

@@ -144,3 +144,22 @@ func SetBounds(e Element, bounds rl.Rectangle) {
 func GetBounds(e Element) rl.Rectangle {
 	return e.GetUIBase().Bounds
 }
+
+func AddEventHandler(e Element, eventName string, handler func(UIEvent)) {
+	base := e.GetUIBase()
+	base.EventHandlers[eventName] = handler
+}
+
+func RemoveEventHandler(e Element, eventName string) {
+	base := e.GetUIBase()
+	delete(base.EventHandlers, eventName)
+}
+
+func adjustTint(base rl.Color, rMul, gMul, bMul, aMul float32) rl.Color {
+	return rl.Color{
+		R: uint8(float32(base.R) * rMul),
+		G: uint8(float32(base.G) * gMul),
+		B: uint8(float32(base.B) * bMul),
+		A: uint8(float32(base.A) * aMul),
+	}
+}

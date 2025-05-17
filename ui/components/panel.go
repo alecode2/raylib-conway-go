@@ -1,20 +1,23 @@
-package ui
+package cmp
 
-import rl "github.com/gen2brain/raylib-go/raylib"
+import (
+	ui "conway/ui"
+	rl "github.com/gen2brain/raylib-go/raylib"
+)
 
 type Panel struct {
-	*UIBase
+	*ui.UIBase
 	Color rl.Color
 }
 
 func NewPanel(color rl.Color) *Panel {
 	return &Panel{
-		UIBase: NewUIBase(),
+		UIBase: ui.NewUIBase(),
 		Color:  color,
 	}
 }
 
-func (p *Panel) GetUIBase() *UIBase {
+func (p *Panel) GetUIBase() *ui.UIBase {
 	return p.UIBase
 }
 

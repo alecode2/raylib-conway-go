@@ -1,9 +1,11 @@
 package render
 
 import (
+	"conway/assets"
 	"conway/event"
 	"conway/game"
 	ui "conway/ui"
+	cmp "conway/ui/components"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -14,8 +16,8 @@ type GameState = game.GameState
 type Settings = game.Settings
 
 func InitUI(state GameState, settings Settings, bus *EventBus) (ui.Element, map[string]ui.Element) {
-
-	root := &ui.Container{
+	// Instance the components
+	root := &cmp.Container{
 		UIBase: &ui.UIBase{
 			ID:           "ROOT",
 			Direction:    ui.Horizontal,
@@ -29,28 +31,58 @@ func InitUI(state GameState, settings Settings, bus *EventBus) (ui.Element, map[
 		},
 	}
 
-	label := &ui.Label{
+	btnTexture := assets.LoadTexture("./assets/PNG/Blue/Default/button_rectangle_depth_gloss.png")
+
+	button := &cmp.ImageButton{
 		UIBase: &ui.UIBase{
-			ID:           "GREETING_LABEL",
-			WidthSizing:  ui.SizingFit,
-			HeightSizing: ui.SizingFit,
-			Visible:      false,
+			ID:            "RESUME_BTN",
+			Width:         192,
+			Height:        64,
+			WidthSizing:   ui.SizingFixed,
+			HeightSizing:  ui.SizingFixed,
+			EventHandlers: make(map[string]func(ui.UIEvent)),
+			MainAlign:     ui.AlignCenter,
+			CrossAlign:    ui.CrossAlignCenter,
+			Visible:       false,
 		},
-		Text:      "PAUSED",
-		Font:      rl.GetFontDefault(),
-		FontSize:  64,
-		FontColor: rl.Black,
-		TextAlign: ui.AlignTextCenter,
-		Wrap:      false,
-		Spacing:   float32(1),
+		Texture:      btnTexture,
+		TintDefault:  rl.White,
+		TintHovered:  rl.LightGray,
+		TintPressed:  rl.Gray,
+		TintDisabled: rl.Fade(rl.White, 0.5),
 	}
 
-	ui.AddChild(root, label)
+	ui.AddEventHandler(button, ui.EventRelease, func(ui.UIEvent) {
+		bus.Emit(event.Event{Name: "toggle_pause"})
+	})
+
+	font := assets.LoadFont("./assets/Font/Kenney Future.ttf")
+
+	label := &cmp.Label{
+		UIBase: &ui.UIBase{
+			ID:           "RESUME_LABEL",
+			WidthSizing:  ui.SizingFit,
+			HeightSizing: ui.SizingFit,
+			Visible:      true,
+		},
+		Text:      "PAUSED",
+		Font:      font,
+		FontSize:  32,
+		FontColor: rl.White,
+		TextAlign: ui.AlignTextCenter,
+		Wrap:      false,
+		Spacing:   float32(0),
+	}
+
+	//Set the tree
+	ui.AddChild(root, button)
+	ui.AddChild(button, label)
 
 	//Populating the ui registry
 	uiMap := make(map[string]ui.Element)
 	uiMap["ROOT"] = root
-	uiMap["GREETING_LABEL"] = label
+	uiMap["RESUME_BTN"] = button
+	uiMap["RESUME_LABEL"] = label
 
 	return root, uiMap
 }

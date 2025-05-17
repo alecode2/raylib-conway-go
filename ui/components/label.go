@@ -1,25 +1,25 @@
-package ui
+package cmp
 
 import (
-	"strings"
-
+	ui "conway/ui"
 	rl "github.com/gen2brain/raylib-go/raylib"
+	"strings"
 )
 
 type Label struct {
-	*UIBase
+	*ui.UIBase
 	Text      string
 	Font      rl.Font
 	FontSize  float32
 	FontColor rl.Color
-	TextAlign TextAlign
+	TextAlign ui.TextAlign
 	Wrap      bool
 	Spacing   float32
 }
 
-func NewLabel(text string, font rl.Font, fsize float32, fcolor rl.Color, tAlign TextAlign, wrap bool, spacing float32) *Label {
+func NewLabel(text string, font rl.Font, fsize float32, fcolor rl.Color, tAlign ui.TextAlign, wrap bool, spacing float32) *Label {
 	return &Label{
-		UIBase:    NewUIBase(),
+		UIBase:    ui.NewUIBase(),
 		Text:      text,
 		Font:      font,
 		FontSize:  fsize,
@@ -30,7 +30,7 @@ func NewLabel(text string, font rl.Font, fsize float32, fcolor rl.Color, tAlign 
 	}
 }
 
-func (l *Label) GetUIBase() *UIBase {
+func (l *Label) GetUIBase() *ui.UIBase {
 	return l.UIBase
 }
 
@@ -77,11 +77,11 @@ func (l *Label) Draw() {
 	for i, info := range infos {
 		var xPos float32
 		switch l.TextAlign {
-		case AlignTextLeft:
+		case ui.AlignTextLeft:
 			xPos = l.Bounds.X
-		case AlignTextCenter:
+		case ui.AlignTextCenter:
 			xPos = l.Bounds.X + (l.Bounds.Width-info.width)/2
-		case AlignTextRight:
+		case ui.AlignTextRight:
 			xPos = l.Bounds.X + l.Bounds.Width - info.width
 		}
 		y := yStart + float32(i)*(info.height+spacing)
@@ -89,14 +89,14 @@ func (l *Label) Draw() {
 	}
 }
 
-func (l *Label) Measure(axis Axis) float32 {
+func (l *Label) Measure(axis ui.Axis) float32 {
 	font := rl.GetFontDefault()
 	size := l.FontSize
 	txt := l.Text
 
 	textSize := rl.MeasureTextEx(font, txt, size, 1)
 
-	if axis == Horizontal {
+	if axis == ui.Horizontal {
 		return textSize.X
 	}
 	return textSize.Y

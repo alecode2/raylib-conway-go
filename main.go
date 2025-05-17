@@ -52,8 +52,8 @@ func main() {
 	bus.Subscribe("toggle_pause", func(e event.Event) {
 		state.IsPaused = !state.IsPaused
 		fmt.Printf("Toggled Pause from Event Bus\n")
-		if pausePanel, ok := registry["GREETING_LABEL"]; ok {
-			pausePanel.GetUIBase().Visible = state.IsPaused
+		if pauseBtn, ok := registry["RESUME_BTN"]; ok {
+			pauseBtn.GetUIBase().Visible = state.IsPaused
 		}
 	})
 
@@ -71,6 +71,12 @@ func main() {
 
 	// Main rendering loop
 	for !rl.WindowShouldClose() {
+		mouse := rl.GetMousePosition()
+
+		//Handling UI Updates
+		ui.RefreshUIEventList(root)
+		ui.HandleUIHover(mouse)
+
 		//Reading inputs
 		if rl.IsKeyPressed(rl.KeySpace) {
 			bus.Emit(event.Event{Name: "toggle_pause"})
@@ -85,7 +91,17 @@ func main() {
 			state.ResetBoard()
 		}
 
-		mouse := rl.GetMousePosition()
+		if rl.IsMouseButtonPressed(rl.MouseLeftButton) {
+			ui.HandleUIPress(mouse)
+		}
+
+		if rl.IsMouseButtonReleased(rl.MouseLeftButton) {
+			if !ui.HandleUIRelease(mouse) {
+				gridX := int32(mouse.X) / int32(state.CellSize)
+				gridY := int32(mouse.Y) / int32(state.CellSize)
+				state.ToggleCell(gridX, gridY)
+			}
+		}
 
 		//Game Logic
 		if state.Lapsed >= state.Step && !state.IsPaused {
@@ -101,23 +117,6 @@ func main() {
 		}
 
 		state.Lapsed += rl.GetFrameTime()
-
-		//Handling UI Updates
-		ui.RefreshUIEventList(root)
-		ui.HandleUIHover(mouse)
-
-		if rl.IsMouseButtonPressed(rl.MouseLeftButton) {
-			ui.HandleUIPress(mouse)
-		}
-
-		if rl.IsMouseButtonReleased(rl.MouseLeftButton) {
-			if !ui.HandleUIClick(mouse) {
-				gridX := int32(mouse.X) / int32(state.CellSize)
-				gridY := int32(mouse.Y) / int32(state.CellSize)
-				state.ToggleCell(gridX, gridY)
-			}
-
-		}
 
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.RayWhite)
