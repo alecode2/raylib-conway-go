@@ -6,6 +6,7 @@ import (
 )
 
 var textures = make(map[string]rl.Texture2D)
+var fonts = make(map[string]rl.Font)
 
 // LoadTexture loads a texture if it hasn't been loaded already
 func LoadTexture(path string) rl.Texture2D {
@@ -38,4 +39,35 @@ func UnloadAllTextures() {
 		rl.UnloadTexture(tex)
 	}
 	textures = make(map[string]rl.Texture2D) // Clear map
+}
+
+func LoadFont(path string) rl.Font {
+	if font, exists := fonts[path]; exists {
+		return font
+	}
+	font := rl.LoadFont(path)
+
+	if font.Texture.ID == 0 {
+		panic(fmt.Sprintf("Failed to load font: %s", path))
+	}
+
+	fonts[path] = font
+	return font
+}
+
+// GetTexture returns a previously loaded texture, panics if not found
+func GetFont(path string) rl.Font {
+	font, ok := fonts[path]
+	if !ok {
+		panic(fmt.Sprintf("Font not loaded: %s", path))
+	}
+	return font
+}
+
+func UnloadAllFonts() {
+	for path, font := range fonts {
+		fmt.Printf("Unloading: %s\n", path)
+		rl.UnloadFont(font)
+	}
+	fonts = make(map[string]rl.Font) // Clear map
 }
