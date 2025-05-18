@@ -55,6 +55,22 @@ const (
 	AlignTextRight
 )
 
+//For texture tiling of ui elements
+type DrawMode int
+
+const (
+	DrawModeSimple DrawMode = iota
+	DrawModeNineSlice
+	DrawModeTiled
+)
+
+type DrawConfig struct {
+	Mode       DrawMode
+	NineSlice  [9]rl.Rectangle // Used only if Mode == DrawModeNineSlice
+	TileCenter bool            // Only for 9-slice/tile modes
+	TileEdges  bool
+}
+
 /*
 UI BASE TYPE
 */

@@ -14,6 +14,8 @@ type ImageButton struct {
 	TintHovered  rl.Color
 	TintPressed  rl.Color
 	TintDisabled rl.Color
+
+	DrawConfig ui.DrawConfig
 }
 
 func (ib *ImageButton) GetUIBase() *ui.UIBase {
@@ -21,11 +23,13 @@ func (ib *ImageButton) GetUIBase() *ui.UIBase {
 }
 
 func (ib *ImageButton) Draw() {
+	//Check for texture in memory
 	if ib.Texture.ID == 0 {
 		fmt.Printf("WARNING: No Texture ID\n")
 		return
 	}
 
+	//Figure out the tint
 	var tint rl.Color
 	switch ib.GetUIBase().State {
 	case ui.UIStateDisabled:
@@ -38,12 +42,29 @@ func (ib *ImageButton) Draw() {
 		tint = ib.TintDefault
 	}
 
-	src := rl.NewRectangle(0, 0, float32(ib.Texture.Width), float32(ib.Texture.Height))
-	dest := ui.GetBounds(ib)
-	origin := rl.NewVector2(0, 0)
-	rotation := float32(0)
+	switch ib.DrawConfig.Mode {
+	case ui.DrawModeSimple:
+		src := rl.NewRectangle(0, 0, float32(ib.Texture.Width), float32(ib.Texture.Height))
+		rl.DrawTexturePro(ib.Texture, src, ib.Bounds, rl.NewVector2(0, 0), 0, tint)
 
-	rl.DrawTexturePro(ib.Texture, src, dest, origin, rotation, tint)
+	case ui.DrawModeNineSlice:
+		ui.DrawNineSlice(
+			ib.Texture,
+			ib.DrawConfig.NineSlice,
+			ib.Bounds,
+			tint,
+			ib.DrawConfig.TileCenter,
+			ib.DrawConfig.TileEdges,
+		)
+
+	case ui.DrawModeTiled:
+		src := rl.NewRectangle(0, 0, float32(ib.Texture.Width), float32(ib.Texture.Height))
+		ui.TileTexture(ib.Texture, src, ib.Bounds, tint)
+
+	// You can expand this easily
+	default:
+		fmt.Println("ERROR: Unknown DrawMode")
+	}
 }
 
 func (ib *ImageButton) IsHovered(mouse rl.Vector2) bool {

@@ -31,7 +31,8 @@ func InitUI(state GameState, settings Settings, bus *EventBus) (ui.Element, map[
 		},
 	}
 
-	btnTexture := assets.LoadTexture("./assets/PNG/Blue/Default/button_rectangle_depth_gloss.png")
+	//btnTexture := assets.LoadTexture("./assets/PNG/Blue/Default/button_rectangle_depth_gloss.png")
+	btnTexture := assets.LoadTexture("./assets/9slice.png")
 
 	button := &cmp.ImageButton{
 		UIBase: &ui.UIBase{
@@ -52,6 +53,13 @@ func InitUI(state GameState, settings Settings, bus *EventBus) (ui.Element, map[
 		TintDisabled: rl.Fade(rl.White, 0.5),
 	}
 
+	button.DrawConfig = ui.DrawConfig{
+		Mode:       ui.DrawModeNineSlice,
+		NineSlice:  ui.MakeNineSliceRegions(btnTexture, 32, 96, 32, 96),
+		TileCenter: true,
+		TileEdges:  true,
+	}
+
 	ui.AddEventHandler(button, ui.EventRelease, func(ui.UIEvent) {
 		bus.Emit(event.Event{Name: "toggle_pause"})
 	})
@@ -65,7 +73,7 @@ func InitUI(state GameState, settings Settings, bus *EventBus) (ui.Element, map[
 			HeightSizing: ui.SizingFit,
 			Visible:      true,
 		},
-		Text:      "PAUSED",
+		Text:      "RESUME",
 		Font:      font,
 		FontSize:  32,
 		FontColor: rl.White,
