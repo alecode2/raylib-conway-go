@@ -52,7 +52,7 @@ func main() {
 	bus.Subscribe("toggle_pause", func(e event.Event) {
 		state.IsPaused = !state.IsPaused
 		fmt.Printf("Toggled Pause from Event Bus\n")
-		if pauseBtn, ok := registry["RESUME_BTN"]; ok {
+		if pauseBtn, ok := registry["PAUSE_PANEL"]; ok {
 			pauseBtn.GetUIBase().Visible = state.IsPaused
 		}
 	})

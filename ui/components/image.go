@@ -13,17 +13,8 @@ type Image struct {
 	TintHovered  rl.Color
 	TintPressed  rl.Color
 	TintDisabled rl.Color
-}
 
-func NewImage(texture rl.Texture2D, tint rl.Color) *Image {
-	return &Image{
-		UIBase:       ui.NewUIBase(),
-		Texture:      texture,
-		TintDefault:  tint,
-		TintHovered:  tint,
-		TintPressed:  tint,
-		TintDisabled: tint,
-	}
+	DrawConfig ui.DrawConfig
 }
 
 func (i *Image) GetUIBase() *ui.UIBase {
@@ -31,29 +22,48 @@ func (i *Image) GetUIBase() *ui.UIBase {
 }
 
 func (i *Image) Draw() {
+	//Check for texture in memory
 	if i.Texture.ID == 0 {
 		fmt.Printf("WARNING: No Texture ID\n")
 		return
 	}
 
+	//Figure out the tint
 	var tint rl.Color
-	switch i.UIBase.State {
+	switch i.GetUIBase().State {
+	case ui.UIStateDisabled:
+		tint = i.TintDisabled
 	case ui.UIStateHovered:
 		tint = i.TintHovered
 	case ui.UIStatePressed:
 		tint = i.TintPressed
-	case ui.UIStateDisabled:
-		tint = i.TintDisabled
 	default:
 		tint = i.TintDefault
 	}
 
-	src := rl.NewRectangle(0, 0, float32(i.Texture.Width), float32(i.Texture.Height))
-	dest := ui.GetBounds(i)
-	origin := rl.NewVector2(0, 0)
-	rotation := float32(0)
+	switch i.DrawConfig.Mode {
+	case ui.DrawModeSimple:
+		src := rl.NewRectangle(0, 0, float32(i.Texture.Width), float32(i.Texture.Height))
+		rl.DrawTexturePro(i.Texture, src, i.Bounds, rl.NewVector2(0, 0), 0, tint)
 
-	rl.DrawTexturePro(i.Texture, src, dest, origin, rotation, tint)
+	case ui.DrawModeNineSlice:
+		ui.DrawNineSlice(
+			i.Texture,
+			i.DrawConfig.NineSlice,
+			i.Bounds,
+			tint,
+			i.DrawConfig.TileCenter,
+			i.DrawConfig.TileEdges,
+		)
+
+	case ui.DrawModeTiled:
+		src := rl.NewRectangle(0, 0, float32(i.Texture.Width), float32(i.Texture.Height))
+		ui.TileTexture(i.Texture, src, i.Bounds, tint)
+
+	// You can expand this easily
+	default:
+		fmt.Println("ERROR: Unknown DrawMode")
+	}
 }
 
 func (i *Image) Measure(axis ui.Axis) float32 {
@@ -61,4 +71,8 @@ func (i *Image) Measure(axis ui.Axis) float32 {
 		return float32(i.Texture.Width)
 	}
 	return float32(i.Texture.Height)
+}
+
+func (i *Image) IsHovered(mouse rl.Vector2) bool {
+	return rl.CheckCollisionPointRec(mouse, i.Bounds)
 }

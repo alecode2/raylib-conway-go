@@ -31,8 +31,38 @@ func InitUI(state GameState, settings Settings, bus *EventBus) (ui.Element, map[
 		},
 	}
 
+	slicetext := assets.LoadTexture("./assets/9slice.png")
+
+	panel := &cmp.ImagePanel{
+		UIBase: &ui.UIBase{
+			ID:            "PAUSE_PANEL",
+			Width:         192,
+			Height:        64,
+			Direction:     ui.Vertical,
+			WidthSizing:   ui.SizingFit,
+			HeightSizing:  ui.SizingFit,
+			EventHandlers: make(map[string]func(ui.UIEvent)),
+			MainAlign:     ui.AlignCenter,
+			CrossAlign:    ui.CrossAlignCenter,
+			Visible:       false,
+			PaddingTop:    32,
+			PaddingBottom: 32,
+		},
+		Texture:      slicetext,
+		TintDefault:  rl.White,
+		TintHovered:  rl.White,
+		TintPressed:  rl.White,
+		TintDisabled: rl.White,
+	}
+
+	panel.DrawConfig = ui.DrawConfig{
+		Mode:       ui.DrawModeNineSlice,
+		NineSlice:  ui.MakeNineSliceRegions(slicetext, 32, 96, 32, 96),
+		TileCenter: true,
+		TileEdges:  true,
+	}
+
 	//btnTexture := assets.LoadTexture("./assets/PNG/Blue/Default/button_rectangle_depth_gloss.png")
-	btnTexture := assets.LoadTexture("./assets/9slice.png")
 
 	button := &cmp.ImageButton{
 		UIBase: &ui.UIBase{
@@ -44,9 +74,9 @@ func InitUI(state GameState, settings Settings, bus *EventBus) (ui.Element, map[
 			EventHandlers: make(map[string]func(ui.UIEvent)),
 			MainAlign:     ui.AlignCenter,
 			CrossAlign:    ui.CrossAlignCenter,
-			Visible:       false,
+			Visible:       true,
 		},
-		Texture:      btnTexture,
+		Texture:      slicetext,
 		TintDefault:  rl.White,
 		TintHovered:  rl.LightGray,
 		TintPressed:  rl.Gray,
@@ -55,7 +85,7 @@ func InitUI(state GameState, settings Settings, bus *EventBus) (ui.Element, map[
 
 	button.DrawConfig = ui.DrawConfig{
 		Mode:       ui.DrawModeNineSlice,
-		NineSlice:  ui.MakeNineSliceRegions(btnTexture, 32, 96, 32, 96),
+		NineSlice:  ui.MakeNineSliceRegions(slicetext, 32, 96, 32, 96),
 		TileCenter: true,
 		TileEdges:  true,
 	}
@@ -67,6 +97,22 @@ func InitUI(state GameState, settings Settings, bus *EventBus) (ui.Element, map[
 	font := assets.LoadFont("./assets/Font/Kenney Future.ttf")
 
 	label := &cmp.Label{
+		UIBase: &ui.UIBase{
+			ID:           "PAUSE_LABEL",
+			WidthSizing:  ui.SizingFit,
+			HeightSizing: ui.SizingFit,
+			Visible:      true,
+		},
+		Text:      "GAME PAUSED",
+		Font:      font,
+		FontSize:  48,
+		FontColor: rl.Black,
+		TextAlign: ui.AlignTextCenter,
+		Wrap:      false,
+		Spacing:   float32(1),
+	}
+
+	btnlabel := &cmp.Label{
 		UIBase: &ui.UIBase{
 			ID:           "RESUME_LABEL",
 			WidthSizing:  ui.SizingFit,
@@ -83,12 +129,15 @@ func InitUI(state GameState, settings Settings, bus *EventBus) (ui.Element, map[
 	}
 
 	//Set the tree
-	ui.AddChild(root, button)
-	ui.AddChild(button, label)
+	ui.AddChild(root, panel)
+	ui.AddChild(panel, label)
+	ui.AddChild(panel, button)
+	ui.AddChild(button, btnlabel)
 
 	//Populating the ui registry
 	uiMap := make(map[string]ui.Element)
 	uiMap["ROOT"] = root
+	uiMap["PAUSE_PANEL"] = panel
 	uiMap["RESUME_BTN"] = button
 	uiMap["RESUME_LABEL"] = label
 
