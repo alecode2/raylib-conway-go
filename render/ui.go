@@ -36,8 +36,6 @@ func InitUI(state GameState, settings Settings, bus *EventBus) (ui.Element, map[
 	panel := &cmp.ImagePanel{
 		UIBase: &ui.UIBase{
 			ID:            "PAUSE_PANEL",
-			Width:         192,
-			Height:        64,
 			Direction:     ui.Vertical,
 			WidthSizing:   ui.SizingFit,
 			HeightSizing:  ui.SizingFit,
@@ -45,8 +43,10 @@ func InitUI(state GameState, settings Settings, bus *EventBus) (ui.Element, map[
 			MainAlign:     ui.AlignCenter,
 			CrossAlign:    ui.CrossAlignCenter,
 			Visible:       false,
-			PaddingTop:    32,
-			PaddingBottom: 32,
+			PaddingBottom: 16,
+			PaddingLeft:   16,
+			PaddingRight:  16,
+			Gap:           8,
 		},
 		Texture:      slicetext,
 		TintDefault:  rl.White,
@@ -57,7 +57,7 @@ func InitUI(state GameState, settings Settings, bus *EventBus) (ui.Element, map[
 
 	panel.DrawConfig = ui.DrawConfig{
 		Mode:       ui.DrawModeNineSlice,
-		NineSlice:  ui.MakeNineSliceRegions(slicetext, 32, 96, 32, 96),
+		NineSlice:  ui.MakeNineSliceRegions(slicetext, 16, 80, 16, 80),
 		TileCenter: true,
 		TileEdges:  true,
 	}
@@ -85,7 +85,7 @@ func InitUI(state GameState, settings Settings, bus *EventBus) (ui.Element, map[
 
 	button.DrawConfig = ui.DrawConfig{
 		Mode:       ui.DrawModeNineSlice,
-		NineSlice:  ui.MakeNineSliceRegions(slicetext, 32, 96, 32, 96),
+		NineSlice:  ui.MakeNineSliceRegions(slicetext, 16, 80, 16, 80),
 		TileCenter: true,
 		TileEdges:  true,
 	}
@@ -94,7 +94,7 @@ func InitUI(state GameState, settings Settings, bus *EventBus) (ui.Element, map[
 		bus.Emit(event.Event{Name: "toggle_pause"})
 	})
 
-	font := assets.LoadFont("./assets/Font/Kenney Future.ttf")
+	font := assets.LoadFont("./assets/Font/RobotoMono-Medium.ttf", 96)
 
 	label := &cmp.Label{
 		UIBase: &ui.UIBase{
@@ -105,8 +105,8 @@ func InitUI(state GameState, settings Settings, bus *EventBus) (ui.Element, map[
 		},
 		Text:      "GAME PAUSED",
 		Font:      font,
-		FontSize:  48,
-		FontColor: rl.Black,
+		FontSize:  64,
+		FontColor: rl.White,
 		TextAlign: ui.AlignTextCenter,
 		Wrap:      false,
 		Spacing:   float32(1),
@@ -121,7 +121,7 @@ func InitUI(state GameState, settings Settings, bus *EventBus) (ui.Element, map[
 		},
 		Text:      "RESUME",
 		Font:      font,
-		FontSize:  32,
+		FontSize:  48,
 		FontColor: rl.White,
 		TextAlign: ui.AlignTextCenter,
 		Wrap:      false,

@@ -26,7 +26,7 @@ func NewLabel(text string, font rl.Font, fsize float32, fcolor rl.Color, tAlign 
 		FontColor: fcolor,
 		TextAlign: tAlign,
 		Wrap:      wrap,
-		Spacing:   float32(1), //Default spacing
+		Spacing:   spacing,
 	}
 }
 
@@ -90,11 +90,8 @@ func (l *Label) Draw() {
 }
 
 func (l *Label) Measure(axis ui.Axis) float32 {
-	font := rl.GetFontDefault()
-	size := l.FontSize
-	txt := l.Text
 
-	textSize := rl.MeasureTextEx(font, txt, size, 1)
+	textSize := rl.MeasureTextEx(l.Font, l.Text, l.FontSize, l.Spacing)
 
 	if axis == ui.Horizontal {
 		return textSize.X

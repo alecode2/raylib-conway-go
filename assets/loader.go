@@ -41,11 +41,12 @@ func UnloadAllTextures() {
 	textures = make(map[string]rl.Texture2D) // Clear map
 }
 
-func LoadFont(path string) rl.Font {
+func LoadFont(path string, baseSize int32) rl.Font {
 	if font, exists := fonts[path]; exists {
 		return font
 	}
-	font := rl.LoadFont(path)
+	font := rl.LoadFontEx(path, baseSize, nil)
+	rl.GenTextureMipmaps(&font.Texture)
 
 	if font.Texture.ID == 0 {
 		panic(fmt.Sprintf("Failed to load font: %s", path))
