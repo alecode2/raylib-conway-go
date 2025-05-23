@@ -71,6 +71,7 @@ func main() {
 
 	// Main rendering loop
 	for !rl.WindowShouldClose() {
+		delta := rl.GetFrameTime()
 		mouse := rl.GetMousePosition()
 
 		//Handling UI Updates
@@ -102,7 +103,12 @@ func main() {
 				state.ToggleCell(gridX, gridY)
 			}
 		}
-
+		/*
+			if rl.IsKeyPressed(rl.KeyD) {
+				btn := registry["RESUME_BTN"]
+				ui.AnimateProperty(btn.GetUIBase(), ui.Tint, rl.White, rl.Red, 1, ui.EaseInOutQuad)
+			}
+		*/
 		//Game Logic
 		if state.Lapsed >= state.Step && !state.IsPaused {
 			game.ConwayStep(&state)
@@ -116,7 +122,12 @@ func main() {
 			state.StepForward = false
 		}
 
-		state.Lapsed += rl.GetFrameTime()
+		state.Lapsed += delta
+
+		ui.Size(root)
+		ui.Position(root)
+		ui.AdvanceAnimations(root, delta)
+		ui.PrintActiveAnimations(root)
 
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.RayWhite)
@@ -124,8 +135,6 @@ func main() {
 		render.DrawGrid(state.CellSize, state.Current, settings)
 		render.DrawBoard(state.CellSize, state.Current, settings)
 
-		ui.Size(root)
-		ui.Position(root)
 		ui.Draw(root)
 
 		rl.EndDrawing()

@@ -61,11 +61,11 @@ func HandleUIHover(mouse rl.Vector2) {
 
 		if hovered {
 			if base.State != UIStateHovered && base.State != UIStatePressed {
-				base.State = UIStateHovered
+				SetState(elem, UIStateHovered)
 				dispatchEvent(elem, UIEvent{Name: EventHover, MousePosition: mouse})
 			}
 		} else if base.State == UIStateHovered {
-			base.State = UIStateDefault
+			SetState(elem, UIStateDefault)
 			dispatchEvent(elem, UIEvent{Name: EventBlur, MousePosition: mouse})
 		}
 	}
@@ -115,7 +115,7 @@ func dispatchPressFrom(elem Element) {
 		MousePosition: rl.GetMousePosition(),
 	})
 
-	elem.GetUIBase().State = UIStatePressed
+	SetState(elem, UIStatePressed)
 
 	if elem.GetUIBase().PropagateEvents && elem.GetUIBase().Parent != nil {
 		dispatchPressFrom(elem.GetUIBase().Parent)
@@ -138,7 +138,8 @@ func dispatchReleaseFrom(elem Element) {
 		Name:          EventRelease,
 		MousePosition: rl.GetMousePosition(),
 	})
-	elem.GetUIBase().State = UIStateDefault
+
+	SetState(elem, UIStateDefault)
 
 	if elem.GetUIBase().PropagateEvents && elem.GetUIBase().Parent != nil {
 		dispatchReleaseFrom(elem.GetUIBase().Parent)

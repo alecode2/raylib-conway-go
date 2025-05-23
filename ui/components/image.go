@@ -8,12 +8,7 @@ import (
 
 type Image struct {
 	*ui.UIBase
-	Texture      rl.Texture2D
-	TintDefault  rl.Color
-	TintHovered  rl.Color
-	TintPressed  rl.Color
-	TintDisabled rl.Color
-
+	Texture    rl.Texture2D
 	DrawConfig ui.DrawConfig
 }
 
@@ -22,35 +17,28 @@ func (i *Image) GetUIBase() *ui.UIBase {
 }
 
 func (i *Image) Draw() {
-	//Check for texture in memory
 	if i.Texture.ID == 0 {
-		fmt.Printf("WARNING: No Texture ID\n")
+		fmt.Println("WARNING: No Texture ID")
 		return
 	}
 
-	//Figure out the tint
-	var tint rl.Color
-	switch i.GetUIBase().State {
-	case ui.UIStateDisabled:
-		tint = i.TintDisabled
-	case ui.UIStateHovered:
-		tint = i.TintHovered
-	case ui.UIStatePressed:
-		tint = i.TintPressed
-	default:
-		tint = i.TintDefault
+	tintVal := ui.ResolveStyle(i.UIBase, ui.Tint)
+	tint, ok := tintVal.(rl.Color)
+	if !ok {
+		tint = rl.White
 	}
 
+	dest := i.Bounds
 	switch i.DrawConfig.Mode {
 	case ui.DrawModeSimple:
 		src := rl.NewRectangle(0, 0, float32(i.Texture.Width), float32(i.Texture.Height))
-		rl.DrawTexturePro(i.Texture, src, i.Bounds, rl.NewVector2(0, 0), 0, tint)
+		rl.DrawTexturePro(i.Texture, src, dest, rl.NewVector2(0, 0), 0, tint)
 
 	case ui.DrawModeNineSlice:
 		ui.DrawNineSlice(
 			i.Texture,
 			i.DrawConfig.NineSlice,
-			i.Bounds,
+			dest,
 			tint,
 			i.DrawConfig.TileCenter,
 			i.DrawConfig.TileEdges,
@@ -58,9 +46,8 @@ func (i *Image) Draw() {
 
 	case ui.DrawModeTiled:
 		src := rl.NewRectangle(0, 0, float32(i.Texture.Width), float32(i.Texture.Height))
-		ui.TileTexture(i.Texture, src, i.Bounds, tint)
+		ui.TileTexture(i.Texture, src, dest, tint)
 
-	// You can expand this easily
 	default:
 		fmt.Println("ERROR: Unknown DrawMode")
 	}

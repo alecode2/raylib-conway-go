@@ -16,45 +16,65 @@ type GameState = game.GameState
 type Settings = game.Settings
 
 func InitUI(state GameState, settings Settings, bus *EventBus) (ui.Element, map[string]ui.Element) {
-	// Instance the components
-	root := &cmp.Container{
-		UIBase: &ui.UIBase{
-			ID:           "ROOT",
-			Direction:    ui.Horizontal,
-			Width:        float32(state.ScreenWidth),
-			Height:       float32(state.ScreenHeight),
-			WidthSizing:  ui.SizingFixed,
-			HeightSizing: ui.SizingFixed,
-			MainAlign:    ui.AlignCenter,
-			CrossAlign:   ui.CrossAlignCenter,
-			Visible:      true,
-		},
-	}
-
+	font := assets.LoadFont("./assets/Font/RobotoMono-Medium.ttf", 96)
 	slicetext := assets.LoadTexture("./assets/9slice.png")
 
-	panel := &cmp.ImagePanel{
-		UIBase: &ui.UIBase{
-			ID:            "PAUSE_PANEL",
-			Direction:     ui.Vertical,
-			WidthSizing:   ui.SizingFit,
-			HeightSizing:  ui.SizingFit,
-			EventHandlers: make(map[string]func(ui.UIEvent)),
-			MainAlign:     ui.AlignCenter,
-			CrossAlign:    ui.CrossAlignCenter,
-			Visible:       false,
-			PaddingBottom: 16,
-			PaddingLeft:   16,
-			PaddingRight:  16,
-			Gap:           8,
+	panelStyle := &ui.StyleSheet{
+		States: map[ui.UIState]ui.StyleSet{
+			ui.UIStateDefault:  {ui.Tint: rl.White},
+			ui.UIStateHovered:  {ui.Tint: rl.White},
+			ui.UIStatePressed:  {ui.Tint: rl.White},
+			ui.UIStateDisabled: {ui.Tint: rl.White},
 		},
-		Texture:      slicetext,
-		TintDefault:  rl.White,
-		TintHovered:  rl.White,
-		TintPressed:  rl.White,
-		TintDisabled: rl.White,
+		Animations: map[ui.StyleProperty]ui.AnimationConfig{
+			ui.Tint: {Duration: 0.2, Easing: ui.EaseOutQuad},
+		},
 	}
 
+	buttonStyle := &ui.StyleSheet{
+		States: map[ui.UIState]ui.StyleSet{
+			ui.UIStateDefault:  {ui.Tint: rl.White},
+			ui.UIStateHovered:  {ui.Tint: rl.LightGray},
+			ui.UIStatePressed:  {ui.Tint: rl.Gray},
+			ui.UIStateDisabled: {ui.Tint: rl.Fade(rl.White, 0.5)},
+		},
+		Animations: map[ui.StyleProperty]ui.AnimationConfig{
+			ui.Tint: {Duration: 0.2, Easing: ui.EaseOutQuad},
+		},
+	}
+
+	labelStyle := &ui.StyleSheet{
+		States: map[ui.UIState]ui.StyleSet{
+			ui.UIStateDefault: {ui.Tint: rl.White},
+		},
+		Animations: map[ui.StyleProperty]ui.AnimationConfig{
+			ui.Tint: {Duration: 0.2, Easing: ui.EaseOutQuad},
+		},
+	}
+
+	root := cmp.NewContainer()
+	root.ID = "ROOT"
+	root.Direction = ui.Horizontal
+	root.Width = float32(state.ScreenWidth)
+	root.Height = float32(state.ScreenHeight)
+	root.WidthSizing = ui.SizingFixed
+	root.HeightSizing = ui.SizingFixed
+	root.MainAlign = ui.AlignCenter
+	root.CrossAlign = ui.CrossAlignCenter
+	root.Visible = true
+
+	panel := cmp.NewImagePanel(slicetext, panelStyle)
+	panel.ID = "PAUSE_PANEL"
+	panel.Direction = ui.Vertical
+	panel.WidthSizing = ui.SizingFit
+	panel.HeightSizing = ui.SizingFit
+	panel.Visible = false
+	panel.MainAlign = ui.AlignCenter
+	panel.CrossAlign = ui.CrossAlignCenter
+	panel.PaddingBottom = 16
+	panel.PaddingLeft = 16
+	panel.PaddingRight = 16
+	panel.Gap = 8
 	panel.DrawConfig = ui.DrawConfig{
 		Mode:       ui.DrawModeNineSlice,
 		NineSlice:  ui.MakeNineSliceRegions(slicetext, 16, 80, 16, 80),
@@ -62,27 +82,15 @@ func InitUI(state GameState, settings Settings, bus *EventBus) (ui.Element, map[
 		TileEdges:  true,
 	}
 
-	//btnTexture := assets.LoadTexture("./assets/PNG/Blue/Default/button_rectangle_depth_gloss.png")
-
-	button := &cmp.ImageButton{
-		UIBase: &ui.UIBase{
-			ID:            "RESUME_BTN",
-			Width:         192,
-			Height:        64,
-			WidthSizing:   ui.SizingFixed,
-			HeightSizing:  ui.SizingFixed,
-			EventHandlers: make(map[string]func(ui.UIEvent)),
-			MainAlign:     ui.AlignCenter,
-			CrossAlign:    ui.CrossAlignCenter,
-			Visible:       true,
-		},
-		Texture:      slicetext,
-		TintDefault:  rl.White,
-		TintHovered:  rl.LightGray,
-		TintPressed:  rl.Gray,
-		TintDisabled: rl.Fade(rl.White, 0.5),
-	}
-
+	button := cmp.NewImageButton(slicetext, buttonStyle)
+	button.ID = "RESUME_BTN"
+	button.Width = 192
+	button.Height = 64
+	button.WidthSizing = ui.SizingFixed
+	button.HeightSizing = ui.SizingFixed
+	button.MainAlign = ui.AlignCenter
+	button.CrossAlign = ui.CrossAlignCenter
+	button.Visible = true
 	button.DrawConfig = ui.DrawConfig{
 		Mode:       ui.DrawModeNineSlice,
 		NineSlice:  ui.MakeNineSliceRegions(slicetext, 16, 80, 16, 80),
@@ -94,52 +102,34 @@ func InitUI(state GameState, settings Settings, bus *EventBus) (ui.Element, map[
 		bus.Emit(event.Event{Name: "toggle_pause"})
 	})
 
-	font := assets.LoadFont("./assets/Font/RobotoMono-Medium.ttf", 96)
+	label := cmp.NewLabel("GAME PAUSED", font, 64, labelStyle)
+	label.ID = "PAUSE_LABEL"
+	label.WidthSizing = ui.SizingFit
+	label.HeightSizing = ui.SizingFit
+	label.TextAlign = ui.AlignTextCenter
+	label.Wrap = false
+	label.Spacing = 1
 
-	label := &cmp.Label{
-		UIBase: &ui.UIBase{
-			ID:           "PAUSE_LABEL",
-			WidthSizing:  ui.SizingFit,
-			HeightSizing: ui.SizingFit,
-			Visible:      true,
-		},
-		Text:      "GAME PAUSED",
-		Font:      font,
-		FontSize:  64,
-		FontColor: rl.White,
-		TextAlign: ui.AlignTextCenter,
-		Wrap:      false,
-		Spacing:   float32(1),
-	}
+	btnlabel := cmp.NewLabel("RESUME", font, 48, labelStyle)
+	btnlabel.ID = "RESUME_LABEL"
+	btnlabel.WidthSizing = ui.SizingFit
+	btnlabel.HeightSizing = ui.SizingFit
+	btnlabel.TextAlign = ui.AlignTextCenter
+	btnlabel.Wrap = false
+	btnlabel.Spacing = 0
 
-	btnlabel := &cmp.Label{
-		UIBase: &ui.UIBase{
-			ID:           "RESUME_LABEL",
-			WidthSizing:  ui.SizingFit,
-			HeightSizing: ui.SizingFit,
-			Visible:      true,
-		},
-		Text:      "RESUME",
-		Font:      font,
-		FontSize:  48,
-		FontColor: rl.White,
-		TextAlign: ui.AlignTextCenter,
-		Wrap:      false,
-		Spacing:   float32(0),
-	}
-
-	//Set the tree
 	ui.AddChild(root, panel)
 	ui.AddChild(panel, label)
 	ui.AddChild(panel, button)
 	ui.AddChild(button, btnlabel)
 
-	//Populating the ui registry
-	uiMap := make(map[string]ui.Element)
-	uiMap["ROOT"] = root
-	uiMap["PAUSE_PANEL"] = panel
-	uiMap["RESUME_BTN"] = button
-	uiMap["RESUME_LABEL"] = label
+	uiMap := map[string]ui.Element{
+		"ROOT":         root,
+		"PAUSE_PANEL":  panel,
+		"RESUME_BTN":   button,
+		"RESUME_LABEL": btnlabel,
+		"PAUSE_LABEL":  label,
+	}
 
 	return root, uiMap
 }

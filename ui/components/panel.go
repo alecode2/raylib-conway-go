@@ -7,13 +7,11 @@ import (
 
 type Panel struct {
 	*ui.UIBase
-	Color rl.Color
 }
 
 func NewPanel(color rl.Color) *Panel {
 	return &Panel{
 		UIBase: ui.NewUIBase(),
-		Color:  color,
 	}
 }
 
@@ -22,7 +20,13 @@ func (p *Panel) GetUIBase() *ui.UIBase {
 }
 
 func (p *Panel) Draw() {
-	rl.DrawRectangleRec(p.Bounds, p.Color)
+	colorVal := ui.ResolveStyle(p.UIBase, ui.Tint)
+	color, ok := colorVal.(rl.Color)
+	if !ok {
+		color = rl.White
+	}
+
+	rl.DrawRectangleRec(p.Bounds, color)
 }
 
 func (p *Panel) IsHovered(mouse rl.Vector2) bool {

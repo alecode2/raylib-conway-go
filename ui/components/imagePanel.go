@@ -1,7 +1,7 @@
 package cmp
 
 import (
-	"conway/ui"
+	ui "conway/ui"
 	"fmt"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -9,13 +9,18 @@ import (
 
 type ImagePanel struct {
 	*ui.UIBase
-	Texture      rl.Texture2D
-	TintDefault  rl.Color
-	TintHovered  rl.Color
-	TintPressed  rl.Color
-	TintDisabled rl.Color
-
+	Texture    rl.Texture2D
 	DrawConfig ui.DrawConfig
+}
+
+func NewImagePanel(texture rl.Texture2D, style *ui.StyleSheet) *ImagePanel {
+	base := ui.NewUIBase()
+
+	return &ImagePanel{
+		UIBase:     base,
+		Texture:    texture,
+		DrawConfig: ui.DrawConfig{Mode: ui.DrawModeSimple},
+	}
 }
 
 func (ip *ImagePanel) GetUIBase() *ui.UIBase {
@@ -23,35 +28,28 @@ func (ip *ImagePanel) GetUIBase() *ui.UIBase {
 }
 
 func (ip *ImagePanel) Draw() {
-	//Check for texture in memory
 	if ip.Texture.ID == 0 {
-		fmt.Printf("WARNING: No Texture ID\n")
+		fmt.Println("WARNING: No Texture ID")
 		return
 	}
 
-	//Figure out the tint
-	var tint rl.Color
-	switch ip.GetUIBase().State {
-	case ui.UIStateDisabled:
-		tint = ip.TintDisabled
-	case ui.UIStateHovered:
-		tint = ip.TintHovered
-	case ui.UIStatePressed:
-		tint = ip.TintPressed
-	default:
-		tint = ip.TintDefault
+	tintVal := ui.ResolveStyle(ip.UIBase, ui.Tint)
+	tint, ok := tintVal.(rl.Color)
+	if !ok {
+		tint = rl.White
 	}
 
+	dest := ip.Bounds
 	switch ip.DrawConfig.Mode {
 	case ui.DrawModeSimple:
 		src := rl.NewRectangle(0, 0, float32(ip.Texture.Width), float32(ip.Texture.Height))
-		rl.DrawTexturePro(ip.Texture, src, ip.Bounds, rl.NewVector2(0, 0), 0, tint)
+		rl.DrawTexturePro(ip.Texture, src, dest, rl.NewVector2(0, 0), 0, tint)
 
 	case ui.DrawModeNineSlice:
 		ui.DrawNineSlice(
 			ip.Texture,
 			ip.DrawConfig.NineSlice,
-			ip.Bounds,
+			dest,
 			tint,
 			ip.DrawConfig.TileCenter,
 			ip.DrawConfig.TileEdges,
@@ -59,9 +57,8 @@ func (ip *ImagePanel) Draw() {
 
 	case ui.DrawModeTiled:
 		src := rl.NewRectangle(0, 0, float32(ip.Texture.Width), float32(ip.Texture.Height))
-		ui.TileTexture(ip.Texture, src, ip.Bounds, tint)
+		ui.TileTexture(ip.Texture, src, dest, tint)
 
-	// You can expand this easily
 	default:
 		fmt.Println("ERROR: Unknown DrawMode")
 	}

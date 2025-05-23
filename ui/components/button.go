@@ -7,19 +7,11 @@ import (
 
 type Button struct {
 	*ui.UIBase
-	Color         rl.Color
-	ColorPressed  rl.Color
-	ColorHovered  rl.Color
-	ColorDisabled rl.Color
 }
 
 func NewButton(color rl.Color) *Button {
 	return &Button{
-		UIBase:        ui.NewUIBase(),
-		Color:         color,
-		ColorPressed:  color,
-		ColorHovered:  color,
-		ColorDisabled: color,
+		UIBase: ui.NewUIBase(),
 	}
 }
 
@@ -28,21 +20,14 @@ func (b *Button) GetUIBase() *ui.UIBase {
 }
 
 func (b *Button) Draw() {
-	base := b.UIBase
-	var color rl.Color
-
-	switch base.State {
-	case ui.UIStateDisabled:
-		color = b.ColorDisabled
-	case ui.UIStateHovered:
-		color = b.ColorHovered
-	case ui.UIStatePressed:
-		color = b.ColorPressed
-	default:
-		color = b.Color
+	// Resolve tint from style (animated or not)
+	tintVal := ui.ResolveStyle(b.UIBase, ui.Tint)
+	tint, ok := tintVal.(rl.Color)
+	if !ok {
+		tint = rl.White
 	}
 
-	rl.DrawRectangleRec(b.Bounds, color)
+	rl.DrawRectangleRec(b.Bounds, tint)
 }
 
 func (b *Button) IsHovered(mouse rl.Vector2) bool {

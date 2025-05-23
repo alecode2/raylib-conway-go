@@ -102,6 +102,10 @@ type UIBase struct {
 	PaddingBottom float32
 	PaddingLeft   float32
 	Gap           float32
+
+	//Style things
+	Style     *StyleSheet
+	AnimState map[StyleProperty]*StyleAnimation
 }
 
 func NewUIBase() *UIBase {
@@ -122,10 +126,6 @@ func NewUIBase() *UIBase {
 */
 func GetState(e Element) UIState {
 	return e.GetUIBase().State
-}
-
-func SetState(e Element, state UIState) {
-	e.GetUIBase().State = state
 }
 
 func SetVisible(e Element, visible bool) {
@@ -169,13 +169,4 @@ func AddEventHandler(e Element, eventName string, handler func(UIEvent)) {
 func RemoveEventHandler(e Element, eventName string) {
 	base := e.GetUIBase()
 	delete(base.EventHandlers, eventName)
-}
-
-func adjustTint(base rl.Color, rMul, gMul, bMul, aMul float32) rl.Color {
-	return rl.Color{
-		R: uint8(float32(base.R) * rMul),
-		G: uint8(float32(base.G) * gMul),
-		B: uint8(float32(base.B) * bMul),
-		A: uint8(float32(base.A) * aMul),
-	}
 }
