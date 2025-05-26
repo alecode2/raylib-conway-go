@@ -2,8 +2,9 @@ package cmp
 
 import (
 	ui "conway/ui"
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"strings"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 type Label struct {

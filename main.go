@@ -109,6 +109,7 @@ func main() {
 				ui.AnimateProperty(btn.GetUIBase(), ui.Tint, rl.White, rl.Red, 1, ui.EaseInOutQuad)
 			}
 		*/
+
 		//Game Logic
 		if state.Lapsed >= state.Step && !state.IsPaused {
 			game.ConwayStep(&state)
@@ -127,7 +128,7 @@ func main() {
 		ui.Size(root)
 		ui.Position(root)
 		ui.AdvanceAnimations(root, delta)
-		ui.PrintActiveAnimations(root)
+		//ui.PrintActiveAnimations(root)
 
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.RayWhite)
