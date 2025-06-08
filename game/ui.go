@@ -1,9 +1,8 @@
-package render
+package game
 
 import (
 	"conway/assets"
 	"conway/event"
-	"conway/game"
 	ui "conway/ui"
 	cmp "conway/ui/components"
 
@@ -12,10 +11,8 @@ import (
 
 type Event = event.Event
 type EventBus = event.EventBus
-type GameState = game.GameState
-type Settings = game.Settings
 
-func InitUI(state GameState, settings Settings, bus *EventBus) (ui.Element, map[string]ui.Element) {
+func InitUI(state *GameState, settings *Settings, bus *EventBus) (ui.Element, map[string]ui.Element) {
 	uiMap := make(map[string]ui.Element)
 
 	root := root("ROOT", float32(state.ScreenWidth), float32(state.ScreenHeight), uiMap)
@@ -24,6 +21,7 @@ func InitUI(state GameState, settings Settings, bus *EventBus) (ui.Element, map[
 	resumeBtn := labelButton("RESUME_BUTTON", "RESUME", "toggle_pause", bus, uiMap)
 	paintBtn := labelButton("PAINT_BUTTON", "PAINT CELLS", "select_tool_paint", bus, uiMap)
 	eraseBtn := labelButton("ERASE_BUTTON", "ERASE CELLS", "select_tool_erase", bus, uiMap)
+	dropperBtn := labelButton("EYEDROPPER_BUTTON", "SAMPLE COLOR", "select_tool_eyedropper", bus, uiMap)
 	saveBtn := labelButton("SAVE_BUTTON", "SAVE MAP", "request_map_save", bus, uiMap)
 	loadBtn := labelButton("LOAD_BUTTON", "LOAD MAP", "request_map_load", bus, uiMap)
 	exportBtn := labelButton("EXPORT_BUTTON", "EXPORT MAP", "request_map_export", bus, uiMap)
@@ -33,16 +31,34 @@ func InitUI(state GameState, settings Settings, bus *EventBus) (ui.Element, map[
 	ui.AddChild(panel, resumeBtn)
 	ui.AddChild(panel, paintBtn)
 	ui.AddChild(panel, eraseBtn)
+	ui.AddChild(panel, dropperBtn)
 	ui.AddChild(panel, saveBtn)
 	ui.AddChild(panel, loadBtn)
 	ui.AddChild(panel, exportBtn)
 
-	//Subscribe game logic to events
+	//Here we only subscribe to events in order to do ui changes
 	bus.Subscribe("toggle_pause", func(e event.Event) {
-		state.IsPaused = !state.IsPaused
 		if pauseBtn, ok := uiMap["TOOL_PANEL"]; ok {
 			pauseBtn.GetUIBase().Visible = state.IsPaused
 		}
+	})
+
+	bus.Subscribe("select_tool_paint", func(e event.Event) {
+		paintBtn.Style = selectedTool
+		eraseBtn.Style = buttonStyle
+		dropperBtn.Style = buttonStyle
+	})
+
+	bus.Subscribe("select_tool_erase", func(e event.Event) {
+		paintBtn.Style = buttonStyle
+		eraseBtn.Style = selectedTool
+		dropperBtn.Style = buttonStyle
+	})
+
+	bus.Subscribe("select_tool_eyedropper", func(e event.Event) {
+		paintBtn.Style = buttonStyle
+		eraseBtn.Style = buttonStyle
+		dropperBtn.Style = selectedTool
 	})
 
 	return root, uiMap
@@ -123,25 +139,7 @@ func sectionHeader(id, content string, uiMap map[string]ui.Element) *cmp.Label {
 
 func labelButton(id, label, eventName string, bus *EventBus, uiMap map[string]ui.Element) *cmp.ImageButton {
 	font := assets.LoadFont("./assets/Font/RobotoMono-Medium.ttf", 96)
-	slicetext := assets.LoadTexture("./assets/9slice.png")
-
-	buttonStyle := &ui.StyleSheet{
-		States: map[ui.UIState]ui.StyleSet{
-			ui.UIStateDefault:  {ui.Tint: rl.White},
-			ui.UIStateHovered:  {ui.Tint: rl.LightGray},
-			ui.UIStatePressed:  {ui.Tint: rl.Gray},
-			ui.UIStateDisabled: {ui.Tint: rl.Fade(rl.White, 0.5)},
-		},
-		Animations: map[ui.StyleProperty]ui.AnimationConfig{
-			ui.Tint: {Duration: 0.2, Easing: ui.EaseOutQuad},
-		},
-	}
-
-	labelStyle := &ui.StyleSheet{
-		States: map[ui.UIState]ui.StyleSet{
-			ui.UIStateDefault: {ui.Tint: rl.White},
-		},
-	}
+	slicetext := assets.LoadTexture("./assets/btn.png")
 
 	button := cmp.NewImageButton(slicetext, buttonStyle)
 	button.ID = id

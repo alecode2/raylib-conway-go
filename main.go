@@ -6,7 +6,6 @@ import (
 	"conway/game"
 	"conway/render"
 	"conway/ui"
-	"fmt"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -45,17 +44,11 @@ func main() {
 	//Initializing the Global Event Bus
 	bus := event.NewEventBus()
 
-	//Initializing the UI Tree
-	root, registry := render.InitUI(state, settings, bus)
+	//Initializing the tools
+	game.InitToolBox(&state, &settings, bus)
 
-	//Subscribe game logic to events
-	bus.Subscribe("toggle_pause", func(e event.Event) {
-		state.IsPaused = !state.IsPaused
-		fmt.Printf("Toggled Pause from Event Bus\n")
-		if pauseBtn, ok := registry["PAUSE_PANEL"]; ok {
-			pauseBtn.GetUIBase().Visible = state.IsPaused
-		}
-	})
+	//Initializing the UI Tree
+	root, _ := game.InitUI(&state, &settings, bus)
 
 	// Setup clean termination function for proper resource cleanup
 	cleanupFunc := func() {
@@ -84,8 +77,7 @@ func main() {
 		}
 
 		if rl.IsKeyPressed(rl.KeyRight) {
-			state.StepForward = true
-			fmt.Printf("hit rightArrow, requested Forwards Step=%v\n", state.StepForward)
+			bus.Emit(event.Event{Name: "step_forward"})
 		}
 
 		if rl.IsKeyPressed(rl.KeyR) {
@@ -103,14 +95,9 @@ func main() {
 				state.ToggleCell(gridX, gridY)
 			}
 		}
-		/*
-			if rl.IsKeyPressed(rl.KeyD) {
-				btn := registry["RESUME_BTN"]
-				ui.AnimateProperty(btn.GetUIBase(), ui.Tint, rl.White, rl.Red, 1, ui.EaseInOutQuad)
-			}
-		*/
 
 		//Game Logic
+
 		if state.Lapsed >= state.Step && !state.IsPaused {
 			game.ConwayStep(&state)
 			state.SwapBoards()
@@ -120,6 +107,7 @@ func main() {
 		if state.IsPaused && state.StepForward {
 			game.ConwayStep(&state)
 			state.SwapBoards()
+			state.Lapsed = 0
 			state.StepForward = false
 		}
 
@@ -128,7 +116,6 @@ func main() {
 		ui.Size(root)
 		ui.Position(root)
 		ui.AdvanceAnimations(root, delta)
-		//ui.PrintActiveAnimations(root)
 
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.RayWhite)

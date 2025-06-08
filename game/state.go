@@ -31,6 +31,8 @@ type GameState struct {
 	BoardB  Board
 	Current Board
 	Next    Board
+
+	ActiveTool Tool
 }
 
 func (s *GameState) SwapBoards() {
