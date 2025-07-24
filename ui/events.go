@@ -98,7 +98,6 @@ func HandleUIRelease(mouse rl.Vector2) bool {
 	if currentPressedElement != nil {
 		dispatchReleaseFrom(currentPressedElement)
 
-		// Optional: if the mouse is still over the same element, treat it as a click
 		if hoverable, ok := currentPressedElement.(Hoverable); ok && hoverable.IsHovered(mouse) {
 			dispatchClickFrom(currentPressedElement)
 		}

@@ -1,6 +1,10 @@
 package game
 
-import rl "github.com/gen2brain/raylib-go/raylib"
+import (
+	"conway/ui"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
+)
 
 type Tile struct {
 	Color rl.Color
@@ -33,6 +37,9 @@ type GameState struct {
 	Next    Board
 
 	ActiveTool Tool
+
+	UIRoot ui.Element
+	UIMap  map[string]ui.Element
 }
 
 func (s *GameState) SwapBoards() {

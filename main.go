@@ -4,6 +4,7 @@ import (
 	"conway/assets"
 	"conway/event"
 	"conway/game"
+	"conway/input"
 	"conway/render"
 	"conway/ui"
 
@@ -48,7 +49,10 @@ func main() {
 	game.InitToolBox(&state, &settings, bus)
 
 	//Initializing the UI Tree
-	root, _ := game.InitUI(&state, &settings, bus)
+	_, _ = game.InitUI(&state, &settings, bus)
+
+	//Initializing the Input Event listeners
+	input.InitInput(bus)
 
 	// Setup clean termination function for proper resource cleanup
 	cleanupFunc := func() {
@@ -65,39 +69,10 @@ func main() {
 	// Main rendering loop
 	for !rl.WindowShouldClose() {
 		delta := rl.GetFrameTime()
-		mouse := rl.GetMousePosition()
 
-		//Handling UI Updates
-		ui.RefreshUIEventList(root)
-		ui.HandleUIHover(mouse)
+		input.HandleInput(&state, bus)
 
-		//Reading inputs
-		if rl.IsKeyPressed(rl.KeySpace) {
-			bus.Emit(event.Event{Name: "toggle_pause"})
-		}
-
-		if rl.IsKeyPressed(rl.KeyRight) {
-			bus.Emit(event.Event{Name: "step_forward"})
-		}
-
-		if rl.IsKeyPressed(rl.KeyR) {
-			state.ResetBoard()
-		}
-
-		if rl.IsMouseButtonPressed(rl.MouseLeftButton) {
-			ui.HandleUIPress(mouse)
-		}
-
-		if rl.IsMouseButtonReleased(rl.MouseLeftButton) {
-			if !ui.HandleUIRelease(mouse) {
-				gridX := int32(mouse.X) / int32(state.CellSize)
-				gridY := int32(mouse.Y) / int32(state.CellSize)
-				state.ToggleCell(gridX, gridY)
-			}
-		}
-
-		//Game Logic
-
+		//Simulation
 		if state.Lapsed >= state.Step && !state.IsPaused {
 			game.ConwayStep(&state)
 			state.SwapBoards()
@@ -113,9 +88,10 @@ func main() {
 
 		state.Lapsed += delta
 
-		ui.Size(root)
-		ui.Position(root)
-		ui.AdvanceAnimations(root, delta)
+		//UI Updates
+		ui.Size(state.UIRoot)
+		ui.Position(state.UIRoot)
+		ui.AdvanceAnimations(state.UIRoot, delta)
 
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.RayWhite)
@@ -123,7 +99,7 @@ func main() {
 		render.DrawGrid(state.CellSize, state.Current, settings)
 		render.DrawBoard(state.CellSize, state.Current, settings)
 
-		ui.Draw(root)
+		ui.Draw(state.UIRoot)
 
 		rl.EndDrawing()
 	}

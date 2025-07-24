@@ -51,4 +51,8 @@ func InitToolBox(state *GameState, settings *Settings, bus *event.EventBus) {
 	bus.Subscribe("request_map_export", func(e event.Event) {
 		fmt.Printf("requesting map export\n")
 	})
+
+	bus.Subscribe("hex_input_submit", func(e event.Event) {
+		fmt.Printf("submitted hex value is :%s\n", e.Data)
+	})
 }

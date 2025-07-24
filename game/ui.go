@@ -5,6 +5,7 @@ import (
 	"conway/event"
 	ui "conway/ui"
 	cmp "conway/ui/components"
+	"fmt"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -25,6 +26,7 @@ func InitUI(state *GameState, settings *Settings, bus *EventBus) (ui.Element, ma
 	saveBtn := labelButton("SAVE_BUTTON", "SAVE MAP", "request_map_save", bus, uiMap)
 	loadBtn := labelButton("LOAD_BUTTON", "LOAD MAP", "request_map_load", bus, uiMap)
 	exportBtn := labelButton("EXPORT_BUTTON", "EXPORT MAP", "request_map_export", bus, uiMap)
+	hexInputField := HexInput("HEX_INPUT", "#ff0000", "focus_hex_input", bus, uiMap)
 
 	ui.AddChild(root, panel)
 	ui.AddChild(panel, header)
@@ -35,6 +37,7 @@ func InitUI(state *GameState, settings *Settings, bus *EventBus) (ui.Element, ma
 	ui.AddChild(panel, saveBtn)
 	ui.AddChild(panel, loadBtn)
 	ui.AddChild(panel, exportBtn)
+	ui.AddChild(panel, hexInputField)
 
 	//Here we only subscribe to events in order to do ui changes
 	bus.Subscribe("toggle_pause", func(e event.Event) {
@@ -47,19 +50,32 @@ func InitUI(state *GameState, settings *Settings, bus *EventBus) (ui.Element, ma
 		paintBtn.Style = selectedTool
 		eraseBtn.Style = buttonStyle
 		dropperBtn.Style = buttonStyle
+		hexInputField.Style = buttonStyle
 	})
 
 	bus.Subscribe("select_tool_erase", func(e event.Event) {
 		paintBtn.Style = buttonStyle
 		eraseBtn.Style = selectedTool
 		dropperBtn.Style = buttonStyle
+		hexInputField.Style = buttonStyle
 	})
 
 	bus.Subscribe("select_tool_eyedropper", func(e event.Event) {
 		paintBtn.Style = buttonStyle
 		eraseBtn.Style = buttonStyle
 		dropperBtn.Style = selectedTool
+		hexInputField.Style = buttonStyle
 	})
+
+	bus.Subscribe("focus_hex_input", func(e event.Event) {
+		paintBtn.Style = buttonStyle
+		eraseBtn.Style = buttonStyle
+		dropperBtn.Style = buttonStyle
+		hexInputField.Style = selectedTool
+	})
+
+	state.UIRoot = root
+	state.UIMap = uiMap
 
 	return root, uiMap
 }
@@ -175,4 +191,44 @@ func labelButton(id, label, eventName string, bus *EventBus, uiMap map[string]ui
 	uiMap[labelID] = btnlabel
 
 	return button
+}
+
+func HexInput(id, value, eventName string, bus *event.EventBus, uiMap map[string]ui.Element) *cmp.InputField {
+	font := assets.LoadFont("./assets/Font/RobotoMono-Medium.ttf", 96)
+	slicetext := assets.LoadTexture("./assets/btn.png")
+
+	label := cmp.NewLabel(value, font, 18, labelStyle)
+	label.ID = id + "_LABEL"
+	label.WidthSizing = ui.SizingFit
+	label.HeightSizing = ui.SizingFit
+	label.TextAlign = ui.AlignTextCenter
+	label.Wrap = false
+	label.Spacing = 0
+
+	hexInputField := cmp.NewInputField(slicetext, buttonStyle, label, bus)
+	hexInputField.ID = id
+	hexInputField.Width = 196
+	hexInputField.Height = 32
+	hexInputField.WidthSizing = ui.SizingFixed
+	hexInputField.HeightSizing = ui.SizingFixed
+	hexInputField.MainAlign = ui.AlignCenter
+	hexInputField.CrossAlign = ui.CrossAlignCenter
+	hexInputField.Visible = true
+	hexInputField.DrawConfig = ui.DrawConfig{
+		Mode:       ui.DrawModeNineSlice,
+		NineSlice:  ui.MakeNineSliceRegions(slicetext, 16, 80, 16, 80),
+		TileCenter: true,
+		TileEdges:  true,
+	}
+	hexInputField.SetText(value)
+
+	hexInputField.OnSubmit = func(val string) {
+		fmt.Printf("Hex value submitted: %s\n", val)
+		bus.Emit(event.Event{Name: "hex_input_submit", Data: val})
+	}
+
+	uiMap[id] = hexInputField
+	uiMap[label.ID] = label
+
+	return hexInputField
 }
