@@ -35,3 +35,17 @@ var labelStyle = &ui.StyleSheet{
 		ui.UIStateDefault: {ui.Tint: rl.White},
 	},
 }
+
+var selectedInputField = &ui.StyleSheet{
+	/*
+		States: map[ui.UIState]ui.StyleSet{
+			ui.UIStateDefault:  {ui.Tint: rl.Gray},
+			ui.UIStateHovered:  {ui.Tint: rl.Gray},
+			ui.UIStatePressed:  {ui.Tint: rl.DarkGray},
+			ui.UIStateDisabled: {ui.Tint: rl.Fade(rl.White, 0.5)},
+		},
+		Animations: map[ui.StyleProperty]ui.AnimationConfig{
+			ui.Tint: {Duration: 0.2, Easing: ui.EaseOutQuad},
+		},
+	*/
+}

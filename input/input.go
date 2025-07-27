@@ -91,7 +91,7 @@ func handleTextInput(state *game.GameState, bus *event.EventBus) {
 		return
 	}
 
-	// Exit text mode on Enter
+	// Blur on pressing enter
 	if rl.IsKeyPressed(rl.KeyEnter) {
 		bus.Emit(event.Event{Name: "hex_input_submit", Data: field.Value})
 		currentMode = ModeGameplay
@@ -108,10 +108,15 @@ func handleTextInput(state *game.GameState, bus *event.EventBus) {
 		}
 	}
 
-	// Backspace
-	if rl.IsKeyPressed(rl.KeyBackspace) && len(field.Value) > 0 {
+	// Backspace erases up to the first #
+	if rl.IsKeyPressed(rl.KeyBackspace) && len(field.Value) > 1 {
 		field.Value = field.Value[:len(field.Value)-1]
 		field.Label.Text = field.Value
+	}
+
+	// If the string size is 7 the hex color code is complete, we ignore further characters
+	if len(field.Value) == 7 {
+		return
 	}
 
 	// Hex input

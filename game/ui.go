@@ -5,7 +5,6 @@ import (
 	"conway/event"
 	ui "conway/ui"
 	cmp "conway/ui/components"
-	"fmt"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -27,6 +26,7 @@ func InitUI(state *GameState, settings *Settings, bus *EventBus) (ui.Element, ma
 	loadBtn := labelButton("LOAD_BUTTON", "LOAD MAP", "request_map_load", bus, uiMap)
 	exportBtn := labelButton("EXPORT_BUTTON", "EXPORT MAP", "request_map_export", bus, uiMap)
 	hexInputField := HexInput("HEX_INPUT", "#ff0000", "focus_hex_input", bus, uiMap)
+	colorPreview := colorPreview("COLOR_PREVIEW", uiMap)
 
 	ui.AddChild(root, panel)
 	ui.AddChild(panel, header)
@@ -38,6 +38,7 @@ func InitUI(state *GameState, settings *Settings, bus *EventBus) (ui.Element, ma
 	ui.AddChild(panel, loadBtn)
 	ui.AddChild(panel, exportBtn)
 	ui.AddChild(panel, hexInputField)
+	ui.AddChild(panel, colorPreview)
 
 	//Here we only subscribe to events in order to do ui changes
 	bus.Subscribe("toggle_pause", func(e event.Event) {
@@ -71,7 +72,24 @@ func InitUI(state *GameState, settings *Settings, bus *EventBus) (ui.Element, ma
 		paintBtn.Style = buttonStyle
 		eraseBtn.Style = buttonStyle
 		dropperBtn.Style = buttonStyle
-		hexInputField.Style = selectedTool
+		hexInputField.Style = selectedInputField
+	})
+
+	bus.Subscribe("hex_input_submit", func(e event.Event) {
+		str, ok := e.Data.(string)
+		if !ok {
+			return
+		}
+
+		color := ColorFromHex(str)
+		colorPreview.Style = &ui.StyleSheet{
+			States: map[ui.UIState]ui.StyleSet{
+				ui.UIStateDefault:  {ui.Tint: color},
+				ui.UIStateHovered:  {ui.Tint: color},
+				ui.UIStatePressed:  {ui.Tint: color},
+				ui.UIStateDisabled: {ui.Tint: color},
+			},
+		}
 	})
 
 	state.UIRoot = root
@@ -141,7 +159,7 @@ func sectionHeader(id, content string, uiMap map[string]ui.Element) *cmp.Label {
 		},
 	}
 
-	label := cmp.NewLabel(content, font, 18, labelStyle)
+	label := cmp.NewLabel(content, font, 48, labelStyle)
 	label.ID = "TOOL_LABEL"
 	label.WidthSizing = ui.SizingFit
 	label.HeightSizing = ui.SizingFit
@@ -162,7 +180,7 @@ func labelButton(id, label, eventName string, bus *EventBus, uiMap map[string]ui
 	button.Width = 196
 	button.Height = 32
 	button.WidthSizing = ui.SizingFixed
-	button.HeightSizing = ui.SizingFixed
+	button.HeightSizing = ui.SizingFit
 	button.MainAlign = ui.AlignCenter
 	button.CrossAlign = ui.CrossAlignCenter
 	button.Visible = true
@@ -172,13 +190,15 @@ func labelButton(id, label, eventName string, bus *EventBus, uiMap map[string]ui
 		TileCenter: true,
 		TileEdges:  true,
 	}
+	button.PaddingTop = 8
+	button.PaddingBottom = 8
 
 	ui.AddEventHandler(button, ui.EventRelease, func(ui.UIEvent) {
 		bus.Emit(event.Event{Name: eventName})
 	})
 
 	labelID := id + "_LABEL"
-	btnlabel := cmp.NewLabel(label, font, 18, labelStyle)
+	btnlabel := cmp.NewLabel(label, font, 32, labelStyle)
 	btnlabel.ID = labelID
 	btnlabel.WidthSizing = ui.SizingFit
 	btnlabel.HeightSizing = ui.SizingFit
@@ -197,11 +217,11 @@ func HexInput(id, value, eventName string, bus *event.EventBus, uiMap map[string
 	font := assets.LoadFont("./assets/Font/RobotoMono-Medium.ttf", 96)
 	slicetext := assets.LoadTexture("./assets/btn.png")
 
-	label := cmp.NewLabel(value, font, 18, labelStyle)
+	label := cmp.NewLabel(value, font, 24, labelStyle)
 	label.ID = id + "_LABEL"
-	label.WidthSizing = ui.SizingFit
-	label.HeightSizing = ui.SizingFit
-	label.TextAlign = ui.AlignTextCenter
+	label.WidthSizing = ui.SizingGrow
+	label.HeightSizing = ui.SizingGrow
+	label.TextAlign = ui.AlignTextLeft
 	label.Wrap = false
 	label.Spacing = 0
 
@@ -209,6 +229,9 @@ func HexInput(id, value, eventName string, bus *event.EventBus, uiMap map[string
 	hexInputField.ID = id
 	hexInputField.Width = 196
 	hexInputField.Height = 32
+	hexInputField.PaddingTop = 8
+	hexInputField.PaddingBottom = 8
+	hexInputField.PaddingLeft = 16
 	hexInputField.WidthSizing = ui.SizingFixed
 	hexInputField.HeightSizing = ui.SizingFixed
 	hexInputField.MainAlign = ui.AlignCenter
@@ -223,7 +246,6 @@ func HexInput(id, value, eventName string, bus *event.EventBus, uiMap map[string
 	hexInputField.SetText(value)
 
 	hexInputField.OnSubmit = func(val string) {
-		fmt.Printf("Hex value submitted: %s\n", val)
 		bus.Emit(event.Event{Name: "hex_input_submit", Data: val})
 	}
 
@@ -231,4 +253,17 @@ func HexInput(id, value, eventName string, bus *event.EventBus, uiMap map[string
 	uiMap[label.ID] = label
 
 	return hexInputField
+}
+
+func colorPreview(id string, uiMap map[string]ui.Element) *cmp.Panel {
+	panel := cmp.NewPanel(rl.Black)
+	panel.ID = id
+	panel.Width = 64
+	panel.Height = 64
+	panel.WidthSizing = ui.SizingFixed
+	panel.HeightSizing = ui.SizingFixed
+	panel.Visible = true
+
+	uiMap[id] = panel
+	return panel
 }

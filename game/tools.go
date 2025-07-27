@@ -3,6 +3,10 @@ package game
 import (
 	"conway/event"
 	"fmt"
+	"strconv"
+	"strings"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 type Tool string
@@ -54,5 +58,42 @@ func InitToolBox(state *GameState, settings *Settings, bus *event.EventBus) {
 
 	bus.Subscribe("hex_input_submit", func(e event.Event) {
 		fmt.Printf("submitted hex value is :%s\n", e.Data)
+
+		str, ok := e.Data.(string)
+		if !ok {
+			fmt.Printf("submitted hex is invalid\n")
+			return
+		}
+
+		color := ColorFromHex(str)
+		fmt.Printf("rl.Color value %v\n", color)
+
+		state.SelectedColor = color
 	})
+}
+
+/*
+We convert to RGB and create a rl.Color object with alpha at 255 always
+*/
+func ColorFromHex(hex string) rl.Color {
+	hex = strings.TrimPrefix(hex, "#")
+
+	if len(hex) != 6 {
+		return rl.White
+	}
+
+	r64, err := strconv.ParseInt(hex[0:2], 16, 0)
+	if err != nil {
+		return rl.White
+	}
+	g64, err := strconv.ParseInt(hex[2:4], 16, 0)
+	if err != nil {
+		return rl.White
+	}
+	b64, err := strconv.ParseInt(hex[4:6], 16, 0)
+	if err != nil {
+		return rl.White
+	}
+
+	return rl.Color{R: uint8(r64), G: uint8(g64), B: uint8(b64), A: uint8(255)}
 }
