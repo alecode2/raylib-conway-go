@@ -14,7 +14,7 @@ The most interesting aspect of the project is not just the simulation itself, bu
 - Modular and extensible codebase — easy to expand with new components or simulations.  
 
 ## 📂 Project structure 
-.
+```
 ├── assets/ # Asset management (loading/unloading resources)
 ├── event/ # Global event bus system
 ├── game/ # Conway's Game of Life core logic
@@ -28,7 +28,7 @@ The most interesting aspect of the project is not just the simulation itself, bu
 ├── go.sum # Go modules checksums
 ├── main.go # Entry point
 └── run.sh # Helper script to run the project
-
+```
 🎯 Purpose
 
 This project goes beyond implementing the Game of Life — it demonstrates how to design reusable tools from scratch in Go:
